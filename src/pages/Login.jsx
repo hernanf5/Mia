@@ -5,10 +5,10 @@ import { useAuth } from '../context/AuthContext'
 export default function Login() {
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
-  const [mode, setMode] = useState('login')
-  const [email, setEmail] = useState('')
+  const [mode, setMode]       = useState('login')
+  const [email, setEmail]     = useState('')
   const [password, setPassword] = useState('')
-  const [error, setError] = useState(null)
+  const [error, setError]     = useState(null)
   const [loading, setLoading] = useState(false)
 
   async function handleSubmit(e) {
@@ -29,110 +29,169 @@ export default function Login() {
     }
   }
 
+  function toggleMode() {
+    setMode(m => m === 'login' ? 'register' : 'login')
+    setError(null)
+  }
+
+  const isLogin = mode === 'login'
+
   return (
-    <div style={styles.wrapper}>
-      <div style={styles.card}>
-        <h2 style={styles.title}>💸 Mia</h2>
-        <p style={styles.subtitle}>{mode === 'login' ? 'Iniciá sesión' : 'Creá tu cuenta'}</p>
+    <div style={s.page}>
+      <div style={s.card}>
+        {/* Logo */}
+        <div style={s.logo}>
+          M<span style={{ color: '#10b981' }}>i</span>a
+        </div>
 
-        <form onSubmit={handleSubmit} style={styles.form}>
-          <input
-            style={styles.input}
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={e => setEmail(e.target.value)}
-            required
-          />
-          <input
-            style={styles.input}
-            type="password"
-            placeholder="Contraseña"
-            value={password}
-            onChange={e => setPassword(e.target.value)}
-            required
-          />
+        {/* Title */}
+        <h2 style={s.title}>{isLogin ? 'Bienvenido' : 'Crear cuenta'}</h2>
 
-          {error && <p style={styles.error}>{error}</p>}
+        <form onSubmit={handleSubmit} style={s.form}>
+          <div style={s.field}>
+            <label style={s.label}>Email</label>
+            <input
+              style={s.input}
+              type="email"
+              placeholder="tu@email.com"
+              value={email}
+              onChange={e => setEmail(e.target.value)}
+              required
+              autoComplete="email"
+              onFocus={e => e.target.style.borderColor = '#10b981'}
+              onBlur={e => e.target.style.borderColor = '#3f3f46'}
+            />
+          </div>
 
-          <button style={styles.btn} type="submit" disabled={loading}>
-            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Registrarse'}
+          <div style={s.field}>
+            <label style={s.label}>Contraseña</label>
+            <input
+              style={s.input}
+              type="password"
+              placeholder="••••••••"
+              value={password}
+              onChange={e => setPassword(e.target.value)}
+              required
+              autoComplete={isLogin ? 'current-password' : 'new-password'}
+              onFocus={e => e.target.style.borderColor = '#10b981'}
+              onBlur={e => e.target.style.borderColor = '#3f3f46'}
+            />
+          </div>
+
+          {error && (
+            <div style={s.errorBanner}>
+              {error}
+            </div>
+          )}
+
+          <button style={s.btnPrimary} type="submit" disabled={loading}>
+            {loading ? 'Cargando...' : isLogin ? 'Iniciar sesión' : 'Crear cuenta'}
           </button>
         </form>
 
-        <button
-          style={styles.toggle}
-          onClick={() => { setMode(m => m === 'login' ? 'register' : 'login'); setError(null) }}
-        >
-          {mode === 'login' ? '¿No tenés cuenta? Registrate' : '¿Ya tenés cuenta? Iniciá sesión'}
+        <button style={s.toggleBtn} onClick={toggleMode}>
+          {isLogin
+            ? '¿No tenés cuenta? Registrate'
+            : '¿Ya tenés cuenta? Iniciá sesión'}
         </button>
       </div>
     </div>
   )
 }
 
-const styles = {
-  wrapper: {
+const s = {
+  page: {
     minHeight: '100vh',
+    background: '#0f0f0f',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    background: '#f5f5f5',
+    padding: '1.5rem',
+    fontFamily: 'Inter, sans-serif',
   },
   card: {
-    background: '#fff',
-    padding: '2rem',
-    borderRadius: '8px',
-    boxShadow: '0 2px 12px rgba(0,0,0,0.1)',
+    background: '#1a1a1a',
+    border: '1px solid #27272a',
+    borderRadius: 16,
+    padding: '2.25rem 2rem',
     width: '100%',
-    maxWidth: '360px',
+    maxWidth: 400,
+    boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
+  },
+  logo: {
+    fontSize: 28,
+    fontWeight: 700,
+    letterSpacing: '-.04em',
+    color: '#f5f5f5',
+    textAlign: 'center',
+    marginBottom: '0.5rem',
   },
   title: {
-    margin: '0 0 0.25rem',
-    fontSize: '1.5rem',
+    margin: '0 0 1.75rem',
+    fontSize: '1.25rem',
+    fontWeight: 600,
+    color: '#f5f5f5',
     textAlign: 'center',
-  },
-  subtitle: {
-    margin: '0 0 1.5rem',
-    textAlign: 'center',
-    color: '#666',
-    fontSize: '0.9rem',
   },
   form: {
     display: 'flex',
     flexDirection: 'column',
-    gap: '0.75rem',
+    gap: '1rem',
+  },
+  field: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '0.4rem',
+  },
+  label: {
+    fontSize: '0.8rem',
+    fontWeight: 500,
+    color: '#71717a',
   },
   input: {
-    padding: '0.6rem 0.75rem',
-    border: '1px solid #ddd',
-    borderRadius: '6px',
+    background: '#27272a',
+    border: '1px solid #3f3f46',
+    borderRadius: 8,
+    color: '#f5f5f5',
+    padding: '0.65rem 0.8rem',
     fontSize: '0.95rem',
     outline: 'none',
+    fontFamily: 'inherit',
+    width: '100%',
+    boxSizing: 'border-box',
+    transition: 'border-color .15s',
   },
-  error: {
-    color: '#e94560',
+  errorBanner: {
+    background: 'rgba(244,63,94,.1)',
+    border: '1px solid rgba(244,63,94,.25)',
+    borderRadius: 8,
+    padding: '0.6rem 0.8rem',
+    color: '#f43f5e',
     fontSize: '0.85rem',
-    margin: '0',
+    lineHeight: 1.4,
   },
-  btn: {
-    padding: '0.65rem',
-    background: '#1a1a2e',
-    color: '#fff',
+  btnPrimary: {
+    background: '#10b981',
+    color: '#000',
     border: 'none',
-    borderRadius: '6px',
+    borderRadius: 8,
+    padding: '0.7rem',
     fontSize: '0.95rem',
+    fontWeight: 600,
     cursor: 'pointer',
+    fontFamily: 'inherit',
+    width: '100%',
     marginTop: '0.25rem',
   },
-  toggle: {
-    marginTop: '1rem',
+  toggleBtn: {
+    marginTop: '1.25rem',
     width: '100%',
     background: 'none',
     border: 'none',
-    color: '#1a1a2e',
+    color: '#71717a',
     fontSize: '0.85rem',
     cursor: 'pointer',
-    textDecoration: 'underline',
+    fontFamily: 'inherit',
+    textAlign: 'center',
   },
 }
