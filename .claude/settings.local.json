@@ -11,7 +11,15 @@
       "Bash(echo \"exit: $?\")",
       "PowerShell(robocopy \"E:\\\\proyectos\\\\Mia\\\\gastos-app\" \"E:\\\\proyectos\\\\Mia\" /E /MOVE /NFL /NDL /NJH /NJS; Write-Host \"Exit: $LASTEXITCODE\")",
       "Bash(unzip -l Mia.zip)",
-      "Bash(unzip -o Mia.zip -d Mia_mockup)"
+      "Bash(unzip -o Mia.zip -d Mia_mockup)",
+      "Bash(node *)",
+      "Bash(git add *)",
+      "Bash(git rm *)",
+      "Bash(git commit -m ' *)",
+      "Bash(git commit -m 'fix: add vercel.json to handle SPA routing \\(prevent 404 on refresh\\) *)",
+      "Bash(git push *)",
+      "Bash(git commit -m 'fix: category modal z-index, save error handling, desktop FAB alignment *)",
+      "Bash(git commit -m 'fix: transaction modal z-index and sticky footer; add password toggle in Login *)"
     ]
   }
 }
