@@ -80,83 +80,85 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
         <h3 style={s.title}>{transaction ? 'Editar transacción' : 'Nueva transacción'}</h3>
 
         <form onSubmit={handleSubmit} style={s.form}>
-          <label style={s.label} htmlFor="tx-monto">Monto</label>
-          <input
-            id="tx-monto"
-            style={s.input}
-            type="number"
-            min="0"
-            step="0.01"
-            value={amount}
-            onChange={e => setAmount(e.target.value)}
-            placeholder="0"
-            autoFocus
-            inputMode="decimal"
-          />
+          <div style={s.scrollBody}>
+            <label style={s.label} htmlFor="tx-monto">Monto</label>
+            <input
+              id="tx-monto"
+              style={s.input}
+              type="number"
+              min="0"
+              step="0.01"
+              value={amount}
+              onChange={e => setAmount(e.target.value)}
+              placeholder="0"
+              autoFocus
+              inputMode="decimal"
+            />
 
-          <label style={s.label} htmlFor="tx-categoria">Categoría</label>
-          <select id="tx-categoria" style={s.input} value={categoryId} onChange={e => setCategoryId(e.target.value)}>
-            <option value="">Seleccioná...</option>
-            {Object.entries(grouped).map(([type, cats]) =>
-              cats.length > 0 && (
-                <optgroup key={type} label={TYPE_LABEL[type]}>
-                  {cats.map(c => (
-                    <option key={c.id} value={c.id}>{c.name}</option>
-                  ))}
-                </optgroup>
-              )
+            <label style={s.label} htmlFor="tx-categoria">Categoría</label>
+            <select id="tx-categoria" style={s.input} value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+              <option value="">Seleccioná...</option>
+              {Object.entries(grouped).map(([type, cats]) =>
+                cats.length > 0 && (
+                  <optgroup key={type} label={TYPE_LABEL[type]}>
+                    {cats.map(c => (
+                      <option key={c.id} value={c.id}>{c.name}</option>
+                    ))}
+                  </optgroup>
+                )
+              )}
+            </select>
+
+            {isFixed && (
+              <div style={{ background: 'rgba(124,92,252,.1)', border: '1px solid rgba(124,92,252,.25)', borderRadius: 8, padding: '8px 10px', fontSize: 11, color: 'var(--pu)' }}>
+                Este gasto se agregará a tus gastos fijos del mes
+              </div>
             )}
-          </select>
 
-          {isFixed && (
-            <div style={{ background: 'rgba(124,92,252,.1)', border: '1px solid rgba(124,92,252,.25)', borderRadius: 8, padding: '8px 10px', fontSize: 11, color: 'var(--pu)' }}>
-              Este gasto se agregará a tus gastos fijos del mes
-            </div>
-          )}
+            {subcategories.length > 0 && (
+              <>
+                <label style={s.label} htmlFor="tx-subcategoria">Subcategoría</label>
+                <select id="tx-subcategoria" style={s.input} value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)}>
+                  <option value="">Sin subcategoría</option>
+                  {subcategories.map(sub => (
+                    <option key={sub.id} value={sub.id}>{sub.name}</option>
+                  ))}
+                </select>
+              </>
+            )}
 
-          {subcategories.length > 0 && (
-            <>
-              <label style={s.label} htmlFor="tx-subcategoria">Subcategoría</label>
-              <select id="tx-subcategoria" style={s.input} value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)}>
-                <option value="">Sin subcategoría</option>
-                {subcategories.map(sub => (
-                  <option key={sub.id} value={sub.id}>{sub.name}</option>
-                ))}
-              </select>
-            </>
-          )}
+            <label style={s.label} htmlFor="tx-desc">Descripción</label>
+            <input
+              id="tx-desc"
+              style={s.input}
+              value={description}
+              onChange={e => setDesc(e.target.value)}
+              placeholder="Ej: Supermercado"
+            />
 
-          <label style={s.label} htmlFor="tx-desc">Descripción</label>
-          <input
-            id="tx-desc"
-            style={s.input}
-            value={description}
-            onChange={e => setDesc(e.target.value)}
-            placeholder="Ej: Supermercado"
-          />
+            <label style={s.label} htmlFor="tx-fecha">Fecha</label>
+            <input
+              id="tx-fecha"
+              style={{ ...s.input, colorScheme: 'dark' }}
+              type="date"
+              value={date}
+              onChange={e => setDate(e.target.value)}
+            />
 
-          <label style={s.label} htmlFor="tx-fecha">Fecha</label>
-          <input
-            id="tx-fecha"
-            style={{ ...s.input, colorScheme: 'dark' }}
-            type="date"
-            value={date}
-            onChange={e => setDate(e.target.value)}
-          />
+            <label style={s.label} htmlFor="tx-obs">Observaciones</label>
+            <textarea
+              id="tx-obs"
+              style={{ ...s.input, resize: 'none', minHeight: 58 }}
+              value={observations}
+              onChange={e => setObs(e.target.value)}
+              placeholder="Nota adicional..."
+              rows={2}
+            />
 
-          <label style={s.label} htmlFor="tx-obs">Observaciones</label>
-          <textarea
-            id="tx-obs"
-            style={{ ...s.input, resize: 'none', minHeight: 58 }}
-            value={observations}
-            onChange={e => setObs(e.target.value)}
-            placeholder="Nota adicional..."
-            rows={2}
-          />
+            {error && <p style={s.error}>{error}</p>}
+          </div>
 
-          {error && <p style={s.error}>{error}</p>}
-
-          <div style={s.actions}>
+          <div style={s.footer}>
             <button type="button" style={s.btnSecondary} onClick={onClose}>Cancelar</button>
             <button type="submit" style={s.btnPrimary} disabled={loading}>
               {loading ? 'Guardando...' : 'Guardar'}
@@ -171,16 +173,29 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
 const s = {
   overlay: {
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-    display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 100,
+    display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 200,
   },
   modal: {
     background: 'var(--s1)', borderRadius: '16px 16px 0 0',
-    padding: '1.5rem', width: '100%', maxWidth: 430,
+    width: '100%', maxWidth: 430,
     boxShadow: '0 -4px 32px rgba(0,0,0,0.6)',
-    maxHeight: '90vh', overflowY: 'auto',
+    maxHeight: '90vh',
+    display: 'flex', flexDirection: 'column',
+    overflow: 'hidden',
   },
-  title: { color: 'var(--tx)', margin: '0 0 1.25rem', fontSize: '1.1rem', fontWeight: 600 },
-  form:  { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+  title: {
+    color: 'var(--tx)', padding: '1.5rem 1.5rem 1rem',
+    fontSize: '1.1rem', fontWeight: 600, flexShrink: 0,
+  },
+  form: {
+    display: 'flex', flexDirection: 'column',
+    flex: 1, minHeight: 0,
+  },
+  scrollBody: {
+    flex: 1, overflowY: 'auto',
+    padding: '0 1.5rem 0.5rem',
+    display: 'flex', flexDirection: 'column', gap: '0.5rem',
+  },
   label: { color: 'var(--tx2)', fontSize: '0.8rem' },
   input: {
     background: 'var(--bg)', border: '1px solid var(--bd2)', borderRadius: 8,
@@ -188,7 +203,12 @@ const s = {
     outline: 'none', fontFamily: 'inherit', width: '100%',
   },
   error: { color: 'var(--re)', fontSize: '0.82rem', margin: '0.25rem 0 0' },
-  actions: { display: 'flex', gap: '0.75rem', marginTop: '0.75rem' },
+  footer: {
+    display: 'flex', gap: '0.75rem',
+    padding: '0.75rem 1.5rem 1.25rem',
+    borderTop: '1px solid var(--bd)',
+    flexShrink: 0,
+  },
   btnPrimary: {
     flex: 1, padding: '0.65rem', background: 'var(--gr)', color: '#000',
     border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',

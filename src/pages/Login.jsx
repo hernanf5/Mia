@@ -2,14 +2,29 @@ import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 
+const EyeIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/>
+    <circle cx="12" cy="12" r="3"/>
+  </svg>
+)
+
+const EyeOffIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
+    <line x1="1" y1="1" x2="23" y2="23"/>
+  </svg>
+)
+
 export default function Login() {
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
-  const [mode, setMode]       = useState('login')
-  const [email, setEmail]     = useState('')
-  const [password, setPassword] = useState('')
-  const [error, setError]     = useState(null)
-  const [loading, setLoading] = useState(false)
+  const [mode, setMode]             = useState('login')
+  const [email, setEmail]           = useState('')
+  const [password, setPassword]     = useState('')
+  const [showPassword, setShowPw]   = useState(false)
+  const [error, setError]           = useState(null)
+  const [loading, setLoading]       = useState(false)
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -32,6 +47,7 @@ export default function Login() {
   function toggleMode() {
     setMode(m => m === 'login' ? 'register' : 'login')
     setError(null)
+    setShowPw(false)
   }
 
   const isLogin = mode === 'login'
@@ -64,18 +80,29 @@ export default function Login() {
 
           <div style={s.field}>
             <label style={s.label} htmlFor="login-password">Contraseña</label>
-            <input
-              id="login-password"
-              style={s.input}
-              type="password"
-              placeholder="••••••••"
-              value={password}
-              onChange={e => setPassword(e.target.value)}
-              required
-              autoComplete={isLogin ? 'current-password' : 'new-password'}
-              onFocus={e => e.target.style.setProperty('border-color', 'var(--gr)')}
-              onBlur={e => e.target.style.setProperty('border-color', 'var(--bd2)')}
-            />
+            <div style={s.pwWrap}>
+              <input
+                id="login-password"
+                style={{ ...s.input, paddingRight: '2.75rem' }}
+                type={showPassword ? 'text' : 'password'}
+                placeholder="••••••••"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                autoComplete={isLogin ? 'current-password' : 'new-password'}
+                onFocus={e => e.target.style.setProperty('border-color', 'var(--gr)')}
+                onBlur={e => e.target.style.setProperty('border-color', 'var(--bd2)')}
+              />
+              <button
+                type="button"
+                style={s.eyeBtn}
+                onClick={() => setShowPw(v => !v)}
+                aria-label={showPassword ? 'Ocultar contraseña' : 'Mostrar contraseña'}
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+              </button>
+            </div>
           </div>
 
           {error && (
@@ -159,6 +186,25 @@ const s = {
     width: '100%',
     boxSizing: 'border-box',
     transition: 'border-color .15s',
+  },
+  pwWrap: {
+    position: 'relative',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 10,
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: 'var(--tx2)',
+    padding: 4,
+    display: 'flex',
+    alignItems: 'center',
+    lineHeight: 1,
   },
   errorBanner: {
     background: 'var(--red)',
