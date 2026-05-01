@@ -216,7 +216,7 @@ export default function Transactions() {
       )}
 
       {/* FAB */}
-      <button style={s.fab} onClick={() => setTxModal(null)} aria-label="Nueva transacción">
+      <button style={s.fab} className="fab-r" onClick={() => setTxModal(null)} aria-label="Nueva transacción">
         <PlusIcon />
       </button>
 
@@ -253,7 +253,7 @@ const s = {
     color: 'var(--tx2)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
   },
   fab: {
-    position: 'fixed', bottom: 76, right: 18,
+    position: 'fixed', bottom: 76,
     width: 48, height: 48, borderRadius: '50%',
     background: 'var(--gr)', border: 'none',
     cursor: 'pointer', display: 'flex', alignItems: 'center',

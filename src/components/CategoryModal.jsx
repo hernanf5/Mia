@@ -28,8 +28,9 @@ export default function CategoryModal({ category, onSave, onClose }) {
     if (!name.trim()) { setError('El nombre es requerido'); return }
     setError(null)
     setLoading(true)
-    await onSave({ name: name.trim(), type, color, icon: icon.trim() || null })
+    const result = await onSave({ name: name.trim(), type, color, icon: icon.trim() || null })
     setLoading(false)
+    if (result?.error) setError(result.error.message ?? 'Error al guardar')
   }
 
   return (
@@ -38,8 +39,9 @@ export default function CategoryModal({ category, onSave, onClose }) {
         <h3 style={s.title}>{category ? 'Editar categoría' : 'Nueva categoría'}</h3>
 
         <form onSubmit={handleSubmit} style={s.form}>
-          <label style={s.label}>Nombre</label>
+          <label style={s.label} htmlFor="cat-nombre">Nombre</label>
           <input
+            id="cat-nombre"
             style={s.input}
             value={name}
             onChange={e => setName(e.target.value)}
@@ -47,16 +49,17 @@ export default function CategoryModal({ category, onSave, onClose }) {
             autoFocus
           />
 
-          <label style={s.label}>Tipo</label>
-          <select style={s.input} value={type} onChange={e => setType(e.target.value)}>
+          <label style={s.label} htmlFor="cat-tipo">Tipo</label>
+          <select id="cat-tipo" style={s.input} value={type} onChange={e => setType(e.target.value)}>
             {TYPE_OPTIONS.map(o => (
               <option key={o.value} value={o.value}>{o.label}</option>
             ))}
           </select>
 
-          <label style={s.label}>Color</label>
+          <label style={s.label} htmlFor="cat-color">Color</label>
           <div style={s.colorRow}>
             <input
+              id="cat-color"
               type="color"
               style={s.colorPicker}
               value={color}
@@ -65,8 +68,9 @@ export default function CategoryModal({ category, onSave, onClose }) {
             <span style={s.colorHex}>{color}</span>
           </div>
 
-          <label style={s.label}>Ícono (opcional)</label>
+          <label style={s.label} htmlFor="cat-icono">Ícono (opcional)</label>
           <input
+            id="cat-icono"
             style={s.input}
             value={icon}
             onChange={e => setIcon(e.target.value)}
@@ -91,31 +95,33 @@ const s = {
   overlay: {
     position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
     display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-    zIndex: 100,
+    zIndex: 200,
   },
   modal: {
-    background: '#1a1a1a', borderRadius: '16px 16px 0 0',
+    background: 'var(--s1)', borderRadius: '16px 16px 0 0',
     padding: '1.5rem', width: '100%', maxWidth: '430px',
-    boxShadow: '0 -4px 24px rgba(0,0,0,0.5)',
+    boxShadow: '0 -4px 32px rgba(0,0,0,0.6)',
+    maxHeight: '90vh', overflowY: 'auto',
   },
-  title: { color: '#f5f5f5', margin: '0 0 1.25rem', fontSize: '1.1rem' },
+  title: { color: 'var(--tx)', margin: '0 0 1.25rem', fontSize: '1.1rem', fontWeight: 600 },
   form: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  label: { color: '#71717a', fontSize: '0.8rem', marginBottom: '0' },
+  label: { color: 'var(--tx2)', fontSize: '0.8rem', marginBottom: '0' },
   input: {
-    background: '#0f0f0f', border: '1px solid #2a2a2a', borderRadius: '8px',
-    color: '#f5f5f5', padding: '0.6rem 0.75rem', fontSize: '0.95rem', outline: 'none',
+    background: 'var(--bg)', border: '1px solid var(--bd2)', borderRadius: '8px',
+    color: 'var(--tx)', padding: '0.6rem 0.75rem', fontSize: '0.95rem', outline: 'none',
+    fontFamily: 'inherit', width: '100%',
   },
   colorRow: { display: 'flex', alignItems: 'center', gap: '0.75rem' },
   colorPicker: { width: '48px', height: '40px', border: 'none', background: 'none', cursor: 'pointer', padding: 0 },
-  colorHex: { color: '#71717a', fontSize: '0.85rem', fontFamily: 'monospace' },
-  error: { color: '#f43f5e', fontSize: '0.82rem', margin: '0.25rem 0 0' },
+  colorHex: { color: 'var(--tx2)', fontSize: '0.85rem', fontFamily: 'monospace' },
+  error: { color: 'var(--re)', fontSize: '0.82rem', margin: '0.25rem 0 0' },
   actions: { display: 'flex', gap: '0.75rem', marginTop: '0.75rem' },
   btnPrimary: {
-    flex: 1, padding: '0.65rem', background: '#10b981', color: '#fff',
-    border: 'none', borderRadius: '8px', fontSize: '0.95rem', cursor: 'pointer',
+    flex: 1, padding: '0.65rem', background: 'var(--gr)', color: '#000',
+    border: 'none', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
   btnSecondary: {
-    flex: 1, padding: '0.65rem', background: '#2a2a2a', color: '#f5f5f5',
-    border: 'none', borderRadius: '8px', fontSize: '0.95rem', cursor: 'pointer',
+    flex: 1, padding: '0.65rem', background: 'var(--s2)', color: 'var(--tx)',
+    border: '1px solid var(--bd2)', borderRadius: '8px', fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit',
   },
 }

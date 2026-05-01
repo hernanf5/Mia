@@ -209,7 +209,7 @@ export default function Dashboard() {
       </div>
 
       {/* ── FAB ── */}
-      <button style={s.fab} onClick={() => setShowTxModal(true)} aria-label="Nueva transacción">
+      <button style={s.fab} className="fab-r" onClick={() => setShowTxModal(true)} aria-label="Nueva transacción">
         <PlusIcon />
       </button>
 
@@ -238,7 +238,7 @@ const s = {
     border: '1px solid', whiteSpace: 'nowrap',
   },
   fab: {
-    position: 'fixed', bottom: 76, right: 18,
+    position: 'fixed', bottom: 76,
     width: 48, height: 48, borderRadius: '50%',
     background: 'var(--gr)', border: 'none',
     cursor: 'pointer', display: 'flex',

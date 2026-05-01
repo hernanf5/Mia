@@ -86,12 +86,15 @@ export default function Categories() {
   // ── Category CRUD ──
   async function handleSaveCategory(formData) {
     if (catModal === 'create') {
-      await createCategory({ ...formData, user_id: user.id })
+      const { error } = await createCategory({ ...formData, user_id: user.id })
+      if (error) return { error }
     } else {
-      await updateCategory(catModal.id, formData)
+      const { error } = await updateCategory(catModal.id, formData)
+      if (error) return { error }
     }
     await loadCategories()
     setCatModal(null)
+    return {}
   }
 
   async function handleDeleteCategory() {
@@ -250,6 +253,7 @@ export default function Categories() {
       {/* FAB */}
       <button
         style={s.fab}
+        className="fab-r"
         onClick={() => setCatModal('create')}
         aria-label="Nueva categoría"
       >
@@ -304,7 +308,6 @@ const s = {
   fab: {
     position: 'fixed',
     bottom: 76,
-    right: 18,
     width: 48,
     height: 48,
     borderRadius: '50%',

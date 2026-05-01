@@ -57,6 +57,13 @@ html, body {
   position: relative;
 }
 
+.fab-r {
+  right: 18px;
+}
+@media (min-width: 432px) {
+  .fab-r { right: calc((100vw - 430px) / 2 + 18px); }
+}
+
 .screen {
   flex: 1;
   overflow-y: auto;
