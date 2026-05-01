@@ -2,13 +2,10 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionModal from '../components/TransactionModal'
 import ConfirmModal from '../components/ConfirmModal'
+import { fmtARS } from '../lib/fmt'
 
 const MONTHS       = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
-
-function fmtARS(n) {
-  return '$ ' + Math.abs(Math.round(n)).toLocaleString('es-AR')
-}
 
 function dateLabel(dateStr) {
   const today = new Date().toISOString().slice(0, 10)
@@ -111,11 +108,13 @@ export default function Transactions() {
       <div style={{ padding: '6px 16px 12px' }}>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>Transacciones</div>
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-          <button onClick={() => setMonthOff(o => o - 1)} style={s.navBtn}><ChevL /></button>
+          <button onClick={() => setMonthOff(o => o - 1)} style={s.navBtn} aria-label="Mes anterior"><ChevL /></button>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#bbb' }}>{MONTHS[month]} {year}</span>
           <button
             onClick={() => setMonthOff(o => Math.min(o + 1, 0))}
             style={{ ...s.navBtn, opacity: monthOff === 0 ? .3 : 1 }}
+            aria-label="Mes siguiente"
+            aria-disabled={monthOff === 0}
           ><ChevR /></button>
         </div>
       </div>
@@ -192,8 +191,9 @@ export default function Transactions() {
                       {isOpen && (
                         <div style={{ padding: '10px 14px 12px', background: 'rgba(0,0,0,.2)' }}>
                           {tx.observations && (
-                            <div style={{ background: '#171717', borderRadius: 8, padding: '8px 10px', borderLeft: '2px solid var(--am)', fontSize: 12, color: '#888', lineHeight: 1.5, marginBottom: 10 }}>
-                              {tx.observations}
+                            <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', borderRadius: 8, padding: '8px 10px', background: 'rgba(245,158,11,.05)', fontSize: 12, color: 'var(--tx2)', lineHeight: 1.5, marginBottom: 10 }}>
+                              <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--am)', flexShrink: 0, marginTop: '0.35em' }} />
+                              <span>{tx.observations}</span>
                             </div>
                           )}
                           <div style={{ display: 'flex', gap: 8 }}>
@@ -241,7 +241,7 @@ export default function Transactions() {
 
 const s = {
   navBtn: {
-    width: 30, height: 30, borderRadius: 8,
+    width: 40, height: 40, borderRadius: 10,
     background: 'var(--s2)', border: '1px solid var(--bd2)',
     cursor: 'pointer', display: 'flex', alignItems: 'center',
     justifyContent: 'center', color: '#666',

@@ -1,4 +1,6 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
+import { useAuth } from '../context/AuthContext'
 
 const HomeIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -38,50 +40,153 @@ const TABS = [
 ]
 
 export default function BottomNav() {
-  const navigate   = useNavigate()
+  const navigate     = useNavigate()
   const { pathname } = useLocation()
+  const { user, signOut } = useAuth()
+  const [showProfile, setShowProfile] = useState(false)
+
+  const initial = user?.email?.[0]?.toUpperCase() ?? '?'
+
+  async function handleSignOut() {
+    setShowProfile(false)
+    await signOut()
+    navigate('/login')
+  }
 
   const isActive = (tab) =>
     tab.exact ? pathname === tab.path : pathname.startsWith(tab.path)
 
   return (
-    <nav style={{
-      height: 60,
-      background: '#111',
-      borderTop: '1px solid #1c1c1c',
-      display: 'flex',
-      position: 'absolute',
-      bottom: 0,
-      left: 0,
-      right: 0,
-      zIndex: 100,
-    }}>
-      {TABS.map((tab) => {
-        const active = isActive(tab)
-        return (
-          <button
-            key={tab.path}
-            onClick={() => navigate(tab.path)}
+    <>
+      {showProfile && (
+        <div
+          onClick={() => setShowProfile(false)}
+          style={{ position: 'fixed', inset: 0, zIndex: 150 }}
+        >
+          <div
+            onClick={e => e.stopPropagation()}
             style={{
-              flex: 1,
-              display: 'flex',
-              flexDirection: 'column',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 3,
-              background: 'none',
-              border: 'none',
-              cursor: 'pointer',
-              color: active ? 'var(--gr)' : '#404040',
-              transition: 'color .15s',
-              fontFamily: 'inherit',
+              position: 'absolute',
+              bottom: 68,
+              right: 12,
+              background: '#1a1a1a',
+              border: '1px solid #27272a',
+              borderRadius: 12,
+              padding: '1rem',
+              minWidth: 220,
+              boxShadow: '0 -4px 24px rgba(0,0,0,.6)',
             }}
           >
-            <div style={{ width: 22, height: 22 }}><tab.Icon /></div>
-            <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: '.02em' }}>{tab.label}</span>
-          </button>
-        )
-      })}
-    </nav>
+            <p style={{
+              color: '#71717a',
+              fontSize: '0.78rem',
+              margin: '0 0 0.75rem',
+              wordBreak: 'break-all',
+            }}>
+              {user?.email}
+            </p>
+            <button
+              onClick={handleSignOut}
+              style={{
+                width: '100%',
+                background: 'rgba(244,63,94,.1)',
+                border: '1px solid rgba(244,63,94,.25)',
+                color: '#f43f5e',
+                borderRadius: 8,
+                padding: '0.6rem',
+                fontSize: '0.88rem',
+                fontWeight: 500,
+                cursor: 'pointer',
+                fontFamily: 'inherit',
+              }}
+            >
+              Cerrar sesión
+            </button>
+          </div>
+        </div>
+      )}
+
+      <nav style={{
+        height: 60,
+        background: '#111',
+        borderTop: '1px solid #1c1c1c',
+        display: 'flex',
+        position: 'absolute',
+        bottom: 0,
+        left: 0,
+        right: 0,
+        zIndex: 100,
+      }}>
+        {TABS.map((tab) => {
+          const active = isActive(tab)
+          return (
+            <button
+              key={tab.path}
+              onClick={() => { setShowProfile(false); navigate(tab.path) }}
+              aria-current={active ? 'page' : undefined}
+              style={{
+                flex: 1,
+                display: 'flex',
+                flexDirection: 'column',
+                alignItems: 'center',
+                justifyContent: 'center',
+                gap: 3,
+                background: 'none',
+                border: 'none',
+                cursor: 'pointer',
+                color: active ? 'var(--gr)' : '#404040',
+                transition: 'color .15s',
+                fontFamily: 'inherit',
+              }}
+            >
+              <div style={{ width: 22, height: 22 }}><tab.Icon /></div>
+              <span style={{ fontSize: 10, fontWeight: 500, letterSpacing: '.02em' }}>{tab.label}</span>
+            </button>
+          )
+        })}
+
+        <button
+          onClick={() => setShowProfile(v => !v)}
+          style={{
+            flex: 1,
+            display: 'flex',
+            flexDirection: 'column',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 3,
+            background: 'none',
+            border: 'none',
+            cursor: 'pointer',
+            fontFamily: 'inherit',
+          }}
+        >
+          <div style={{
+            width: 22,
+            height: 22,
+            borderRadius: '50%',
+            background: showProfile ? '#10b981' : '#27272a',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            fontSize: 11,
+            fontWeight: 700,
+            color: showProfile ? '#000' : '#888',
+            transition: 'background .15s, color .15s',
+            flexShrink: 0,
+          }}>
+            {initial}
+          </div>
+          <span style={{
+            fontSize: 10,
+            fontWeight: 500,
+            letterSpacing: '.02em',
+            color: showProfile ? 'var(--gr)' : '#404040',
+            transition: 'color .15s',
+          }}>
+            Perfil
+          </span>
+        </button>
+      </nav>
+    </>
   )
 }

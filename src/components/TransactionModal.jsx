@@ -80,8 +80,9 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
         <h3 style={s.title}>{transaction ? 'Editar transacción' : 'Nueva transacción'}</h3>
 
         <form onSubmit={handleSubmit} style={s.form}>
-          <label style={s.label}>Monto</label>
+          <label style={s.label} htmlFor="tx-monto">Monto</label>
           <input
+            id="tx-monto"
             style={s.input}
             type="number"
             min="0"
@@ -93,8 +94,8 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
             inputMode="decimal"
           />
 
-          <label style={s.label}>Categoría</label>
-          <select style={s.input} value={categoryId} onChange={e => setCategoryId(e.target.value)}>
+          <label style={s.label} htmlFor="tx-categoria">Categoría</label>
+          <select id="tx-categoria" style={s.input} value={categoryId} onChange={e => setCategoryId(e.target.value)}>
             <option value="">Seleccioná...</option>
             {Object.entries(grouped).map(([type, cats]) =>
               cats.length > 0 && (
@@ -115,8 +116,8 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
 
           {subcategories.length > 0 && (
             <>
-              <label style={s.label}>Subcategoría</label>
-              <select style={s.input} value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)}>
+              <label style={s.label} htmlFor="tx-subcategoria">Subcategoría</label>
+              <select id="tx-subcategoria" style={s.input} value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)}>
                 <option value="">Sin subcategoría</option>
                 {subcategories.map(sub => (
                   <option key={sub.id} value={sub.id}>{sub.name}</option>
@@ -125,24 +126,27 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
             </>
           )}
 
-          <label style={s.label}>Descripción</label>
+          <label style={s.label} htmlFor="tx-desc">Descripción</label>
           <input
+            id="tx-desc"
             style={s.input}
             value={description}
             onChange={e => setDesc(e.target.value)}
             placeholder="Ej: Supermercado"
           />
 
-          <label style={s.label}>Fecha</label>
+          <label style={s.label} htmlFor="tx-fecha">Fecha</label>
           <input
+            id="tx-fecha"
             style={{ ...s.input, colorScheme: 'dark' }}
             type="date"
             value={date}
             onChange={e => setDate(e.target.value)}
           />
 
-          <label style={s.label}>Observaciones</label>
+          <label style={s.label} htmlFor="tx-obs">Observaciones</label>
           <textarea
+            id="tx-obs"
             style={{ ...s.input, resize: 'none', minHeight: 58 }}
             value={observations}
             onChange={e => setObs(e.target.value)}
@@ -186,8 +190,8 @@ const s = {
   error: { color: 'var(--re)', fontSize: '0.82rem', margin: '0.25rem 0 0' },
   actions: { display: 'flex', gap: '0.75rem', marginTop: '0.75rem' },
   btnPrimary: {
-    flex: 1, padding: '0.65rem', background: 'var(--gr)', color: '#fff',
-    border: 'none', borderRadius: 8, fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit',
+    flex: 1, padding: '0.65rem', background: 'var(--gr)', color: '#000',
+    border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
   btnSecondary: {
     flex: 1, padding: '0.65rem', background: 'var(--s2)', color: 'var(--tx)',

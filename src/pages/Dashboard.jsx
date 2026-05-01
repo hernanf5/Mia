@@ -4,13 +4,11 @@ import {
   BarChart, Bar, XAxis, Tooltip, ResponsiveContainer,
 } from 'recharts'
 import { useDashboard } from '../hooks/useDashboard'
+import { useAuth } from '../context/AuthContext'
 import TransactionModal from '../components/TransactionModal'
+import { fmtARS } from '../lib/fmt'
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
-
-function fmtARS(n) {
-  return '$ ' + Math.abs(Math.round(n)).toLocaleString('es-AR')
-}
 
 const ChevL = () => (
   <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
@@ -50,6 +48,8 @@ function BarTooltip({ active, payload, label }) {
 export default function Dashboard() {
   const [monthOff, setMonthOff]     = useState(0)
   const [showTxModal, setShowTxModal] = useState(false)
+  const { user } = useAuth()
+  const initial = user?.email?.[0]?.toUpperCase() ?? '?'
 
   const now    = new Date()
   const target = new Date(now.getFullYear(), now.getMonth() + monthOff, 1)
@@ -81,14 +81,14 @@ export default function Dashboard() {
           <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.04em' }}>
             M<span style={{ color: 'var(--pu)' }}>i</span>a
           </div>
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--s2)', border: '1px solid var(--bd2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#666', fontWeight: 600 }}>A</div>
+          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--s2)', border: '1px solid var(--bd2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#888', fontWeight: 600 }}>{initial}</div>
         </div>
 
         {/* Month nav */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <button onClick={() => setMonthOff(o => o - 1)} style={s.navBtn}><ChevL /></button>
+          <button onClick={() => setMonthOff(o => o - 1)} style={s.navBtn} aria-label="Mes anterior"><ChevL /></button>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#bbb' }}>{MONTHS[month]} {year}</span>
-          <button onClick={() => setMonthOff(o => Math.min(o + 1, 0))} style={{ ...s.navBtn, opacity: monthOff === 0 ? .3 : 1 }}>
+          <button onClick={() => setMonthOff(o => Math.min(o + 1, 0))} style={{ ...s.navBtn, opacity: monthOff === 0 ? .3 : 1 }} aria-label="Mes siguiente" aria-disabled={monthOff === 0}>
             <ChevR />
           </button>
         </div>
@@ -226,7 +226,7 @@ export default function Dashboard() {
 
 const s = {
   navBtn: {
-    width: 30, height: 30, borderRadius: 8,
+    width: 40, height: 40, borderRadius: 10,
     background: 'var(--s2)', border: '1px solid var(--bd2)',
     cursor: 'pointer', display: 'flex', alignItems: 'center',
     justifyContent: 'center', color: '#666',

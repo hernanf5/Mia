@@ -39,18 +39,17 @@ export default function Login() {
   return (
     <div style={s.page}>
       <div style={s.card}>
-        {/* Logo */}
         <div style={s.logo}>
-          M<span style={{ color: '#10b981' }}>i</span>a
+          M<span style={{ color: 'var(--gr)' }}>i</span>a
         </div>
 
-        {/* Title */}
         <h2 style={s.title}>{isLogin ? 'Bienvenido' : 'Crear cuenta'}</h2>
 
         <form onSubmit={handleSubmit} style={s.form}>
           <div style={s.field}>
-            <label style={s.label}>Email</label>
+            <label style={s.label} htmlFor="login-email">Email</label>
             <input
+              id="login-email"
               style={s.input}
               type="email"
               placeholder="tu@email.com"
@@ -58,14 +57,15 @@ export default function Login() {
               onChange={e => setEmail(e.target.value)}
               required
               autoComplete="email"
-              onFocus={e => e.target.style.borderColor = '#10b981'}
-              onBlur={e => e.target.style.borderColor = '#3f3f46'}
+              onFocus={e => e.target.style.setProperty('border-color', 'var(--gr)')}
+              onBlur={e => e.target.style.setProperty('border-color', 'var(--bd2)')}
             />
           </div>
 
           <div style={s.field}>
-            <label style={s.label}>Contraseña</label>
+            <label style={s.label} htmlFor="login-password">Contraseña</label>
             <input
+              id="login-password"
               style={s.input}
               type="password"
               placeholder="••••••••"
@@ -73,8 +73,8 @@ export default function Login() {
               onChange={e => setPassword(e.target.value)}
               required
               autoComplete={isLogin ? 'current-password' : 'new-password'}
-              onFocus={e => e.target.style.borderColor = '#10b981'}
-              onBlur={e => e.target.style.borderColor = '#3f3f46'}
+              onFocus={e => e.target.style.setProperty('border-color', 'var(--gr)')}
+              onBlur={e => e.target.style.setProperty('border-color', 'var(--bd2)')}
             />
           </div>
 
@@ -102,16 +102,15 @@ export default function Login() {
 const s = {
   page: {
     minHeight: '100vh',
-    background: '#0f0f0f',
+    background: 'var(--bg)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: '1.5rem',
-    fontFamily: 'Inter, sans-serif',
   },
   card: {
-    background: '#1a1a1a',
-    border: '1px solid #27272a',
+    background: 'var(--s1)',
+    border: '1px solid var(--bd2)',
     borderRadius: 16,
     padding: '2.25rem 2rem',
     width: '100%',
@@ -122,7 +121,7 @@ const s = {
     fontSize: 28,
     fontWeight: 700,
     letterSpacing: '-.04em',
-    color: '#f5f5f5',
+    color: 'var(--tx)',
     textAlign: 'center',
     marginBottom: '0.5rem',
   },
@@ -130,7 +129,7 @@ const s = {
     margin: '0 0 1.75rem',
     fontSize: '1.25rem',
     fontWeight: 600,
-    color: '#f5f5f5',
+    color: 'var(--tx)',
     textAlign: 'center',
   },
   form: {
@@ -146,13 +145,13 @@ const s = {
   label: {
     fontSize: '0.8rem',
     fontWeight: 500,
-    color: '#71717a',
+    color: 'var(--tx2)',
   },
   input: {
-    background: '#27272a',
-    border: '1px solid #3f3f46',
+    background: 'var(--s2)',
+    border: '1px solid var(--bd2)',
     borderRadius: 8,
-    color: '#f5f5f5',
+    color: 'var(--tx)',
     padding: '0.65rem 0.8rem',
     fontSize: '0.95rem',
     outline: 'none',
@@ -162,16 +161,16 @@ const s = {
     transition: 'border-color .15s',
   },
   errorBanner: {
-    background: 'rgba(244,63,94,.1)',
+    background: 'var(--red)',
     border: '1px solid rgba(244,63,94,.25)',
     borderRadius: 8,
     padding: '0.6rem 0.8rem',
-    color: '#f43f5e',
+    color: 'var(--re)',
     fontSize: '0.85rem',
     lineHeight: 1.4,
   },
   btnPrimary: {
-    background: '#10b981',
+    background: 'var(--gr)',
     color: '#000',
     border: 'none',
     borderRadius: 8,
@@ -188,7 +187,7 @@ const s = {
     width: '100%',
     background: 'none',
     border: 'none',
-    color: '#71717a',
+    color: 'var(--tx2)',
     fontSize: '0.85rem',
     cursor: 'pointer',
     fontFamily: 'inherit',
