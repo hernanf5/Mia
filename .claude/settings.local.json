@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//e/proyectos/**)",
+      "Bash(npm create *)",
+      "Bash(npm install *)",
+      "Bash(npm run *)",
+      "PowerShell(Move-Item *)",
+      "PowerShell(robocopy \"E:\\\\proyectos\\\\gastos-app\" \"E:\\\\proyectos\\\\Mia\\\\gastos-app\" /E /MOVE /NFL /NDL /NJH /NJS 2>&1; Write-Host \"Exit: $LASTEXITCODE\")",
+      "Bash(cmd.exe /c \"rd /s /q E:\\\\proyectos\\\\gastos-app\")",
+      "Bash(echo \"exit: $?\")",
+      "PowerShell(robocopy \"E:\\\\proyectos\\\\Mia\\\\gastos-app\" \"E:\\\\proyectos\\\\Mia\" /E /MOVE /NFL /NDL /NJH /NJS; Write-Host \"Exit: $LASTEXITCODE\")",
+      "Bash(unzip -l Mia.zip)",
+      "Bash(unzip -o Mia.zip -d Mia_mockup)"
+    ]
+  }
+}
