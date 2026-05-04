@@ -19,7 +19,14 @@
       "Bash(git commit -m 'fix: add vercel.json to handle SPA routing \\(prevent 404 on refresh\\) *)",
       "Bash(git push *)",
       "Bash(git commit -m 'fix: category modal z-index, save error handling, desktop FAB alignment *)",
-      "Bash(git commit -m 'fix: transaction modal z-index and sticky footer; add password toggle in Login *)"
+      "Bash(git commit -m 'fix: transaction modal z-index and sticky footer; add password toggle in Login *)",
+      "Bash(git commit -m 'docs: add CLAUDE.md with project context, conventions and business logic *)",
+      "Bash(git commit *)",
+      "Bash(Copy-Item \"E:\\\\Descargas\\\\favicon.svg\" \"E:\\\\proyectos\\\\Mia\\\\public\\\\favicon.svg\" -Force)",
+      "Bash(Copy-Item \"E:\\\\Descargas\\\\mia.svg\" \"E:\\\\proyectos\\\\Mia\\\\src\\\\assets\\\\mia.svg\" -Force)",
+      "Bash(Write-Output \"done\")",
+      "Bash(cp \"E:/Descargas/favicon.svg\" \"E:/proyectos/Mia/public/favicon.svg\")",
+      "Bash(cp \"E:/Descargas/mia.svg\" \"E:/proyectos/Mia/src/assets/mia.svg\")"
     ]
   }
 }

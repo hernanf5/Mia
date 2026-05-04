@@ -73,7 +73,7 @@ export default function Login() {
           style={{ textAlign: 'center', marginBottom: 28, ...(ready ? floatStyle(0) : {}) }}
         >
           <img src={Logo} alt="Mia" style={{ width: 80, height: 80, margin: '0 auto 10px', display: 'block' }} />
-          <p style={{ fontSize: 13, color: 'var(--tx2)' }}>Tu expense tracker con amor 💜</p>
+          <p style={{ fontSize: 13, color: 'var(--tx2)' }}>Tu expense tracker personal</p>
         </div>
 
         {/* Tab toggle */}
