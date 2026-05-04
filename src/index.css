@@ -184,6 +184,28 @@ html, body {
 @keyframes flash { 0%,100%{opacity:1} 40%{opacity:.3} }
 .flash { animation: flash .3s ease; }
 
+@keyframes splash-pulse {
+  0%, 100% { transform: scale(1); opacity: 1; }
+  50%       { transform: scale(1.05); opacity: 0.9; }
+}
+@keyframes splash-fade-out {
+  0%   { opacity: 1; transform: scale(1); }
+  100% { opacity: 0; transform: scale(0.9); }
+}
+@keyframes splash-fade-in {
+  0%   { opacity: 0; transform: scale(1.1); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes float-up {
+  0%   { opacity: 0; transform: translateY(20px); }
+  100% { opacity: 1; transform: translateY(0); }
+}
+
+.animate-splash-pulse   { animation: splash-pulse   1.5s ease-in-out infinite; }
+.animate-splash-fade-out { animation: splash-fade-out 0.5s ease-in    forwards; }
+.animate-splash-fade-in  { animation: splash-fade-in  0.6s ease-out   forwards; }
+.animate-float-up        { animation: float-up        0.5s ease-out   forwards; }
+
 /* ── Sidebar (hidden on mobile) ── */
 .sidebar {
   display: none;

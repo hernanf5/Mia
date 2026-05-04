@@ -1,7 +1,10 @@
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Logo from '../assets/mia.svg'
+import SplashScreen from '../components/SplashScreen'
+
+let splashShown = false
 
 const EyeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -9,7 +12,6 @@ const EyeIcon = () => (
     <circle cx="12" cy="12" r="3"/>
   </svg>
 )
-
 const EyeOffIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/>
@@ -17,52 +19,94 @@ const EyeOffIcon = () => (
   </svg>
 )
 
+function floatStyle(delay, extra = {}) {
+  return { opacity: 0, animationDelay: `${delay}s`, ...extra }
+}
+
 export default function Login() {
   const { signIn, signUp } = useAuth()
   const navigate = useNavigate()
-  const [mode, setMode]             = useState('login')
-  const [email, setEmail]           = useState('')
-  const [password, setPassword]     = useState('')
+
+  const [showSplash, setShowSplash] = useState(!splashShown)
+  const [ready,      setReady]      = useState(splashShown)
+
+  const [mode,         setMode]     = useState('login')
+  const [email,        setEmail]    = useState('')
+  const [password,     setPassword] = useState('')
   const [showPassword, setShowPw]   = useState(false)
-  const [error, setError]           = useState(null)
-  const [loading, setLoading]       = useState(false)
+  const [error,        setError]    = useState(null)
+  const [loading,      setLoading]  = useState(false)
+
+  const handleSplashFinish = useCallback(() => {
+    splashShown = true
+    setShowSplash(false)
+    setReady(true)
+  }, [])
 
   async function handleSubmit(e) {
     e.preventDefault()
     setError(null)
     setLoading(true)
-
     const { error } = mode === 'login'
       ? await signIn(email, password)
       : await signUp(email, password)
-
     setLoading(false)
-
-    if (error) {
-      setError(error.message)
-    } else {
-      navigate('/')
-    }
+    if (error) setError(error.message)
+    else navigate('/')
   }
 
-  function toggleMode() {
-    setMode(m => m === 'login' ? 'register' : 'login')
+  function switchMode(m) {
+    setMode(m)
     setError(null)
     setShowPw(false)
   }
 
-  const isLogin = mode === 'login'
-
   return (
     <div style={s.page}>
-      <div style={s.card}>
-        <div style={s.logo}>
-          <img src={Logo} alt="Mia" style={{ width: 120, height: 120, display: 'block', margin: '0 auto' }} />
+      {showSplash && <SplashScreen onFinish={handleSplashFinish} />}
+
+      <div style={s.container}>
+
+        {/* Logo + tagline */}
+        <div
+          className={ready ? 'animate-float-up' : undefined}
+          style={{ textAlign: 'center', marginBottom: 28, ...(ready ? floatStyle(0) : {}) }}
+        >
+          <img src={Logo} alt="Mia" style={{ width: 80, height: 80, margin: '0 auto 10px', display: 'block' }} />
+          <p style={{ fontSize: 13, color: 'var(--tx2)' }}>Tu expense tracker con amor 💜</p>
         </div>
 
-        <h2 style={s.title}>{isLogin ? 'Bienvenido' : 'Crear cuenta'}</h2>
+        {/* Tab toggle */}
+        <div
+          className={ready ? 'animate-float-up' : undefined}
+          style={{ display: 'flex', background: 'var(--s2)', borderRadius: 12, padding: 4, marginBottom: 24, ...(ready ? floatStyle(0.1) : {}) }}
+        >
+          {(['login', 'register']).map(m => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => switchMode(m)}
+              style={{
+                flex: 1, padding: '9px 0', borderRadius: 9,
+                border: 'none', fontFamily: 'inherit',
+                fontSize: 13, fontWeight: 500, cursor: 'pointer',
+                transition: 'all .15s',
+                background: mode === m ? 'var(--s1)' : 'transparent',
+                color:      mode === m ? 'var(--tx)' : 'var(--tx3)',
+                boxShadow:  mode === m ? '0 1px 4px rgba(0,0,0,.4)' : 'none',
+              }}
+            >
+              {m === 'login' ? 'Iniciar sesión' : 'Registrarse'}
+            </button>
+          ))}
+        </div>
 
-        <form onSubmit={handleSubmit} style={s.form}>
+        {/* Form */}
+        <form
+          onSubmit={handleSubmit}
+          className={ready ? 'animate-float-up' : undefined}
+          style={{ display: 'flex', flexDirection: 'column', gap: '1rem', ...(ready ? floatStyle(0.2) : {}) }}
+        >
           <div style={s.field}>
             <label style={s.label} htmlFor="login-email">Email</label>
             <input
@@ -81,7 +125,7 @@ export default function Login() {
 
           <div style={s.field}>
             <label style={s.label} htmlFor="login-password">Contraseña</label>
-            <div style={s.pwWrap}>
+            <div style={{ position: 'relative', display: 'flex', alignItems: 'center' }}>
               <input
                 id="login-password"
                 style={{ ...s.input, paddingRight: '2.75rem' }}
@@ -90,7 +134,7 @@ export default function Login() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                autoComplete={isLogin ? 'current-password' : 'new-password'}
+                autoComplete={mode === 'login' ? 'current-password' : 'new-password'}
                 onFocus={e => e.target.style.setProperty('border-color', 'var(--gr)')}
                 onBlur={e => e.target.style.setProperty('border-color', 'var(--bd2)')}
               />
@@ -106,22 +150,29 @@ export default function Login() {
             </div>
           </div>
 
-          {error && (
-            <div style={s.errorBanner}>
-              {error}
-            </div>
-          )}
+          {error && <div style={s.errorBanner}>{error}</div>}
 
           <button style={s.btnPrimary} type="submit" disabled={loading}>
-            {loading ? 'Cargando...' : isLogin ? 'Iniciar sesión' : 'Crear cuenta'}
+            {loading ? 'Cargando...' : mode === 'login' ? 'Entrar' : 'Crear cuenta'}
           </button>
         </form>
 
-        <button style={s.toggleBtn} onClick={toggleMode}>
-          {isLogin
-            ? '¿No tenés cuenta? Registrate'
-            : '¿Ya tenés cuenta? Iniciá sesión'}
-        </button>
+        {/* Forgot password */}
+        {mode === 'login' && (
+          <p
+            className={ready ? 'animate-float-up' : undefined}
+            style={{ marginTop: 20, textAlign: 'center', fontSize: 12, color: 'var(--tx3)', ...(ready ? floatStyle(0.3) : {}) }}
+          >
+            ¿Olvidaste tu contraseña?{' '}
+            <button
+              type="button"
+              style={{ background: 'none', border: 'none', color: 'var(--pu)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit', padding: 0 }}
+            >
+              Recuperar
+            </button>
+          </p>
+        )}
+
       </div>
     </div>
   )
@@ -129,37 +180,16 @@ export default function Login() {
 
 const s = {
   page: {
-    minHeight: '100vh',
+    minHeight: '100dvh',
     background: 'var(--bg)',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
     padding: '1.5rem',
   },
-  card: {
-    background: 'var(--s1)',
-    border: '1px solid var(--bd2)',
-    borderRadius: 16,
-    padding: '2.25rem 2rem',
+  container: {
     width: '100%',
-    maxWidth: 400,
-    boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
-  },
-  logo: {
-    textAlign: 'center',
-    marginBottom: '1.5rem',
-  },
-  title: {
-    margin: '0 0 1.75rem',
-    fontSize: '1.25rem',
-    fontWeight: 600,
-    color: 'var(--tx)',
-    textAlign: 'center',
-  },
-  form: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '1rem',
+    maxWidth: 380,
   },
   field: {
     display: 'flex',
@@ -183,11 +213,6 @@ const s = {
     width: '100%',
     boxSizing: 'border-box',
     transition: 'border-color .15s',
-  },
-  pwWrap: {
-    position: 'relative',
-    display: 'flex',
-    alignItems: 'center',
   },
   eyeBtn: {
     position: 'absolute',
@@ -224,16 +249,5 @@ const s = {
     fontFamily: 'inherit',
     width: '100%',
     marginTop: '0.25rem',
-  },
-  toggleBtn: {
-    marginTop: '1.25rem',
-    width: '100%',
-    background: 'none',
-    border: 'none',
-    color: 'var(--tx2)',
-    fontSize: '0.85rem',
-    cursor: 'pointer',
-    fontFamily: 'inherit',
-    textAlign: 'center',
   },
 }
