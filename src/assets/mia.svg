@@ -1,0 +1,32 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- Fondo negro -->
+  <rect width="200" height="200" rx="40" fill="#0B0B0F"></rect>
+
+  <!-- Gráfico fintech -->
+  <polyline points="40,120 70,100 100,110 130,80 160,90" fill="none" stroke="#A78BFA" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"></polyline>
+
+  <!-- Puntos -->
+  <circle cx="70" cy="100" r="3" fill="#A78BFA"></circle>
+  <circle cx="130" cy="80" r="3" fill="#A78BFA"></circle>
+
+  <!-- M -->
+  <path d="M50 140 L50 70 L80 110 L110 70 L110 140" fill="none" stroke="#EDEDED" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"></path>
+
+  <!-- i -->
+  <line x1="130" y1="95" x2="130" y2="140" stroke="#EDEDED" stroke-width="4" stroke-linecap="round"></line>
+
+  <!-- Corazón en lugar del punto -->
+  <path d="M130 76 
+           c-2 -3 -8 -3 -8 2 
+           c0 5 8 10 8 10 
+           c0 0 8 -5 8 -10 
+           c0 -5 -6 -5 -8 -2 Z" fill="#A78BFA"></path>
+
+  <!-- a -->
+  <path d="M155 115 
+           a12 12 0 1 1 -0.1 0
+           M167 115 L167 140" fill="none" stroke="#EDEDED" stroke-width="4" stroke-linecap="round"></path>
+
+  <!-- Línea base -->
+  <line x1="60" y1="155" x2="140" y2="155" stroke="#2A2A32" stroke-width="2" stroke-linecap="round"></line>
+</svg>

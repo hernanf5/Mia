@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Logo from '../assets/mia.svg'
 
 const EyeIcon = () => (
   <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -56,7 +57,7 @@ export default function Login() {
     <div style={s.page}>
       <div style={s.card}>
         <div style={s.logo}>
-          M<span style={{ color: 'var(--gr)' }}>i</span>a
+          <img src={Logo} alt="Mia" style={{ width: 120, height: 120, display: 'block', margin: '0 auto' }} />
         </div>
 
         <h2 style={s.title}>{isLogin ? 'Bienvenido' : 'Crear cuenta'}</h2>
@@ -145,12 +146,8 @@ const s = {
     boxShadow: '0 8px 40px rgba(0,0,0,0.5)',
   },
   logo: {
-    fontSize: 28,
-    fontWeight: 700,
-    letterSpacing: '-.04em',
-    color: 'var(--tx)',
     textAlign: 'center',
-    marginBottom: '0.5rem',
+    marginBottom: '1.5rem',
   },
   title: {
     margin: '0 0 1.75rem',

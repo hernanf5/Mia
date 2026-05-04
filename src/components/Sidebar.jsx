@@ -1,5 +1,6 @@
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import Logo from '../assets/mia.svg'
 
 const HomeIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -52,8 +53,8 @@ export default function Sidebar() {
   return (
     <aside className="sidebar">
       {/* Logo */}
-      <div style={{ padding: '0 20px 24px', fontSize: 22, fontWeight: 700, letterSpacing: '-.04em', color: 'var(--tx)', flexShrink: 0 }}>
-        M<span style={{ color: 'var(--pu)' }}>i</span>a
+      <div style={{ padding: '0 20px 24px', flexShrink: 0 }}>
+        <img src={Logo} alt="Mia" style={{ width: 100, height: 100, display: 'block' }} />
       </div>
 
       {/* Nav links */}

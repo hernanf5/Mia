@@ -7,6 +7,7 @@ import { useDashboard } from '../hooks/useDashboard'
 import { useAuth } from '../context/AuthContext'
 import TransactionModal from '../components/TransactionModal'
 import { fmtARS } from '../lib/fmt'
+import Logo from '../assets/mia.svg'
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -79,9 +80,7 @@ export default function Dashboard() {
       <div style={{ padding: '6px 16px 0' }}>
         {/* Logo + avatar: solo visible en mobile (sidebar lo muestra en desktop) */}
         <div className="hide-on-desktop" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-          <div style={{ fontSize: 20, fontWeight: 700, letterSpacing: '-.04em' }}>
-            M<span style={{ color: 'var(--pu)' }}>i</span>a
-          </div>
+          <img src={Logo} alt="Mia" style={{ height: 28, width: 'auto', display: 'block' }} />
           <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--s2)', border: '1px solid var(--bd2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#888', fontWeight: 600 }}>{initial}</div>
         </div>
 
