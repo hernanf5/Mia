@@ -2,6 +2,7 @@ import { useCallback, useEffect, useState } from 'react'
 import { useTransactions } from '../hooks/useTransactions'
 import TransactionModal from '../components/TransactionModal'
 import ConfirmModal from '../components/ConfirmModal'
+import MultiSelectDropdown from '../components/MultiSelectDropdown'
 import { fmtARS } from '../lib/fmt'
 
 const MONTHS       = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
@@ -56,13 +57,6 @@ const TrashIcon = () => (
   </svg>
 )
 
-const TYPE_CHIPS = [
-  { id: 'all',      label: 'Todos'     },
-  { id: 'income',   label: 'Ingresos'  },
-  { id: 'fixed',    label: 'Fijos'     },
-  { id: 'variable', label: 'Variables' },
-]
-
 export default function Transactions() {
   const [monthOff, setMonthOff] = useState(0)
   const now    = new Date()
@@ -71,12 +65,12 @@ export default function Transactions() {
   const month  = target.getMonth()
 
   const { fetchTransactions, deleteTransaction } = useTransactions()
-  const [txns,       setTxns]       = useState([])
-  const [loading,    setLoading]    = useState(true)
-  const [typeFilter, setTypeFilter] = useState('all')
-  const [catFilter,  setCatFilter]  = useState(null)
+  const [txns,         setTxns]         = useState([])
+  const [loading,      setLoading]      = useState(true)
+  const [selectedCats,    setSelectedCats]    = useState(new Set())
+  const [selectedSubcats, setSelectedSubcats] = useState(new Set())
   const [expanded,   setExpanded]   = useState(null)
-  const [txModal,    setTxModal]    = useState(false)   // false=closed | null=create | tx=edit
+  const [txModal,    setTxModal]    = useState(false)
   const [confirmDel, setConfirmDel] = useState(null)
 
   const load = useCallback(async () => {
@@ -87,15 +81,56 @@ export default function Transactions() {
   }, [year, month])
 
   useEffect(() => { load() }, [load])
-  useEffect(() => { setCatFilter(null); setExpanded(null) }, [typeFilter, monthOff])
+  useEffect(() => { setSelectedCats(new Set()); setSelectedSubcats(new Set()); setExpanded(null) }, [monthOff])
 
-  const typeFiltered = txns.filter(tx => {
-    if (tx.category?.type === 'fixed' && !tx.is_checked) return false
-    return typeFilter === 'all' || tx.category?.type === typeFilter
+  // Base: exclude unchecked fixed (not real expenses yet)
+  const base = txns.filter(tx => !(tx.category?.type === 'fixed' && !tx.is_checked))
+
+  // Category options: unique categories present this month
+  const catOptions = [...new Map(
+    base.map(tx => tx.category).filter(Boolean).map(c => [c.id, c])
+  ).values()]
+
+  // Subcategory options: subcats of selected cats (or all if none selected)
+  const subcatOptions = [...new Map(
+    base
+      .filter(tx => selectedCats.size === 0 || selectedCats.has(tx.category?.id))
+      .filter(tx => tx.subcategory?.id)
+      .map(tx => [tx.subcategory.id, { ...tx.subcategory, categoryName: tx.category?.name, categoryColor: tx.category?.color }])
+  ).values()]
+
+  // Apply filters
+  const filtered = base.filter(tx => {
+    if (selectedCats.size > 0 && !selectedCats.has(tx.category?.id)) return false
+    if (selectedSubcats.size > 0 && !selectedSubcats.has(tx.subcategory?.id)) return false
+    return true
   })
-  const catOptions = [...new Set(typeFiltered.map(t => t.category?.name).filter(Boolean))]
-  const filtered   = typeFiltered.filter(tx => !catFilter || tx.category?.name === catFilter)
-  const groups     = groupByDate(filtered)
+
+  const groups = groupByDate(filtered)
+  const hasFilters = selectedCats.size > 0 || selectedSubcats.size > 0
+
+  function toggleCat(id) {
+    setSelectedCats(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+    // clear subcats that no longer belong
+    setSelectedSubcats(new Set())
+  }
+
+  function toggleSubcat(id) {
+    setSelectedSubcats(prev => {
+      const next = new Set(prev)
+      next.has(id) ? next.delete(id) : next.add(id)
+      return next
+    })
+  }
+
+  function clearFilters() {
+    setSelectedCats(new Set())
+    setSelectedSubcats(new Set())
+  }
 
   async function handleDelete() {
     await deleteTransaction(confirmDel.id)
@@ -108,7 +143,9 @@ export default function Transactions() {
       {/* Header */}
       <div style={{ padding: '6px 16px 12px' }}>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>Transacciones</div>
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+
+        {/* Month nav */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <button onClick={() => setMonthOff(o => o - 1)} style={s.navBtn} aria-label="Mes anterior"><ChevL /></button>
           <span style={{ fontSize: 14, fontWeight: 600, color: '#bbb' }}>{MONTHS[month]} {year}</span>
           <button
@@ -118,31 +155,42 @@ export default function Transactions() {
             aria-disabled={monthOff === 0}
           ><ChevR /></button>
         </div>
-      </div>
 
-      {/* Type chips */}
-      <div className="chips" style={{ paddingBottom: 8 }}>
-        {TYPE_CHIPS.map(f => (
-          <button
-            key={f.id}
-            className={'chip' + (typeFilter === f.id ? ' on' : '')}
-            onClick={() => setTypeFilter(f.id)}
-          >{f.label}</button>
-        ))}
-      </div>
-
-      {/* Category chips */}
-      {catOptions.length > 1 && (
-        <div className="chips" style={{ paddingBottom: 10 }}>
-          {catOptions.map(c => (
-            <button
-              key={c}
-              className={'chip' + (catFilter === c ? ' on' : '')}
-              onClick={() => setCatFilter(catFilter === c ? null : c)}
-            >{c}</button>
-          ))}
+        {/* Filter row */}
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+          <MultiSelectDropdown
+            label="Categorías"
+            options={catOptions}
+            selected={selectedCats}
+            onToggle={toggleCat}
+            renderOption={opt => (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: opt.color ?? '#555', flexShrink: 0 }} />
+                <span style={{ fontSize: 13, color: 'var(--tx)', fontWeight: 500 }}>{opt.name}</span>
+              </div>
+            )}
+          />
+          <MultiSelectDropdown
+            label="Subcategorías"
+            options={subcatOptions}
+            selected={selectedSubcats}
+            onToggle={toggleSubcat}
+            renderOption={opt => (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
+                <span style={{ fontSize: 13, color: 'var(--tx)', fontWeight: 500 }}>{opt.name}</span>
+                {opt.categoryName && (
+                  <span style={{ fontSize: 11, color: 'var(--tx3)' }}>{opt.categoryName}</span>
+                )}
+              </div>
+            )}
+          />
+          {hasFilters && (
+            <button onClick={clearFilters} style={s.clearBtn}>
+              Limpiar filtros ✕
+            </button>
+          )}
         </div>
-      )}
+      </div>
 
       {/* List */}
       {loading ? (
@@ -168,7 +216,6 @@ export default function Transactions() {
                         style={{ cursor: 'pointer', borderBottom: (!isLast || isOpen) ? '1px solid var(--bd)' : 'none' }}
                         onClick={() => setExpanded(isOpen ? null : tx.id)}
                       >
-                        {/* Color icon */}
                         <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--s2)', border: '1px solid var(--bd)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
                           <div style={{ width: 10, height: 10, borderRadius: '50%', background: tx.category?.color ?? '#555' }} />
                         </div>
@@ -246,6 +293,12 @@ const s = {
     background: 'var(--s2)', border: '1px solid var(--bd2)',
     cursor: 'pointer', display: 'flex', alignItems: 'center',
     justifyContent: 'center', color: '#666',
+  },
+  clearBtn: {
+    padding: '7px 12px', borderRadius: 10,
+    background: 'var(--red)', border: '1px solid rgba(244,63,94,.2)',
+    color: 'var(--re)', fontSize: 12, fontWeight: 500,
+    cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
   },
   actionBtn: {
     display: 'flex', alignItems: 'center', gap: 5,

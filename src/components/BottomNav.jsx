@@ -106,7 +106,7 @@ export default function BottomNav() {
         </div>
       )}
 
-      <nav style={{
+      <nav className="mobile-nav" style={{
         height: 60,
         background: '#111',
         borderTop: '1px solid #1c1c1c',
