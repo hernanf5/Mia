@@ -59,14 +59,14 @@ export default function Dashboard() {
   const { metrics, history, loading, reload } = useDashboard({ year, month })
 
   const totalIncome    = metrics?.totalIncome    ?? 0
-  const totalFixed     = metrics?.totalFixed     ?? 0
+  const totalFixedPaid = metrics?.totalFixedPaid ?? 0
   const totalVariable  = metrics?.totalVariable  ?? 0
   const available      = metrics?.available      ?? 0
   const byCategory     = metrics?.byCategory     ?? []
-  const totalSpent     = totalFixed + totalVariable
+  const totalSpent     = totalFixedPaid + totalVariable
 
-  const fixedPct = totalIncome > 0 ? Math.min(totalFixed    / totalIncome * 100, 100)                            : 0
-  const varPct   = totalIncome > 0 ? Math.min(totalVariable / totalIncome * 100, Math.max(0, 100 - fixedPct))    : 0
+  const fixedPct = totalIncome > 0 ? Math.min(totalFixedPaid / totalIncome * 100, 100)                         : 0
+  const varPct   = totalIncome > 0 ? Math.min(totalVariable  / totalIncome * 100, Math.max(0, 100 - fixedPct)) : 0
 
   function handleTxSave() {
     setShowTxModal(false)
@@ -98,9 +98,12 @@ export default function Dashboard() {
 
         {/* ── Summary card ── */}
         <div className="card" style={{ padding: 16 }}>
-          <div className="slbl" style={{ marginBottom: 4 }}>Ingresos del mes</div>
-          <div className="mono" style={{ fontSize: 32, fontWeight: 700, color: 'var(--tx)', lineHeight: 1.1, marginBottom: 4 }}>
-            {loading ? '—' : fmtARS(totalIncome)}
+          <div className="slbl" style={{ marginBottom: 4 }}>Saldo disponible</div>
+          <div className="mono" style={{ fontSize: 32, fontWeight: 700, color: loading ? 'var(--tx)' : available >= 0 ? 'var(--gr)' : 'var(--re)', lineHeight: 1.1, marginBottom: 2 }}>
+            {loading ? '—' : fmtARS(available)}
+          </div>
+          <div style={{ fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>
+            {!loading && `de ${fmtARS(totalIncome)} de ingresos`}
           </div>
 
           {/* Stacked progress bar */}
@@ -116,7 +119,7 @@ export default function Dashboard() {
           {/* 3 chips */}
           <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
             <div style={{ ...s.chip, color: '#f59e0b', borderColor: 'rgba(245,158,11,.25)', background: 'rgba(245,158,11,.08)' }}>
-              Fijos {fmtARS(totalFixed)}
+              Fijos {fmtARS(totalFixedPaid)}
             </div>
             <div style={{ ...s.chip, color: '#7c5cfc', borderColor: 'rgba(124,92,252,.25)', background: 'var(--pud)' }}>
               Variables {fmtARS(totalVariable)}
@@ -198,7 +201,7 @@ export default function Dashboard() {
                   content={<BarTooltip />}
                   cursor={{ fill: 'rgba(255,255,255,0.03)' }}
                 />
-                <Bar dataKey="totalFixed"      name="Fijos"     stackId="a" fill="#f59e0b" isAnimationActive />
+                <Bar dataKey="totalFixedPaid"  name="Fijos"     stackId="a" fill="#f59e0b" isAnimationActive />
                 <Bar dataKey="totalVariable"   name="Variables" stackId="a" fill="#7c5cfc" isAnimationActive />
                 <Bar dataKey="availableClamped" name="Disp."    stackId="a" fill="#10b981" radius={[4,4,0,0]} isAnimationActive />
               </BarChart>

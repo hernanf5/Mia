@@ -89,9 +89,10 @@ export default function Transactions() {
   useEffect(() => { load() }, [load])
   useEffect(() => { setCatFilter(null); setExpanded(null) }, [typeFilter, monthOff])
 
-  const typeFiltered = txns.filter(tx =>
-    typeFilter === 'all' || tx.category?.type === typeFilter
-  )
+  const typeFiltered = txns.filter(tx => {
+    if (tx.category?.type === 'fixed' && !tx.is_checked) return false
+    return typeFilter === 'all' || tx.category?.type === typeFilter
+  })
   const catOptions = [...new Set(typeFiltered.map(t => t.category?.name).filter(Boolean))]
   const filtered   = typeFiltered.filter(tx => !catFilter || tx.category?.name === catFilter)
   const groups     = groupByDate(filtered)

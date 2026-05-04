@@ -81,8 +81,18 @@ src/
 
 ### Cálculos en useDashboard
 - `computeMetrics()` devuelve: `totalIncome`, `totalFixedPaid`, `totalFixedPending`, `totalVariable`, `available`, `byCategory`
+- **`totalFixed` NO existe en metrics** — usar siempre `totalFixedPaid`. `metrics?.totalFixed` da `undefined → 0`
 - `byCategory` solo incluye: variables (todas) + fijos con `is_checked === true`
 - History del bar chart usa `totalFixedPaid` (no `totalFixed`)
+
+### Página Transactions
+- Fijos con `is_checked === false` se filtran **antes** del typeFilter — no aparecen en ninguna vista
+- Un gasto fijo solo es "gasto" cuando está checkeado; hasta entonces es compromiso pendiente (ver página Fijos)
+
+### Dashboard — card principal
+- Número grande: `available` (verde si ≥ 0, rojo si < 0)
+- Subtítulo: `de $X de ingresos` en `var(--tx2)`
+- `fmtARS` usa `Math.abs` — el color comunica el signo, no el número
 
 ## Supabase — Tablas principales
 
@@ -98,3 +108,5 @@ src/
 - **Modal tapado por BottomNav**: overlay necesita `zIndex: 200` (nav es 100)
 - **Categoría no guarda**: `handleSaveCategory` no chequeaba error de Supabase — ahora retorna `{ error }` y el modal muestra el mensaje
 - **FAB fuera del shell en desktop**: clase `.fab-r` con media query `calc((100vw - 430px) / 2 + 18px)`
+- **Dashboard mostraba fijos = 0**: `metrics?.totalFixed` no existe en computeMetrics — siempre usar `metrics?.totalFixedPaid`
+- **Bar chart fijos vacío**: `dataKey="totalFixed"` en history que expone `totalFixedPaid` — corregido
