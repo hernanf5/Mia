@@ -37,7 +37,6 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
     e.preventDefault()
     const num = parseFloat(amount)
     if (!amount || isNaN(num) || num <= 0) { setError('Monto inválido'); return }
-    if (!description.trim())               { setError('Descripción requerida'); return }
     if (!categoryId)                       { setError('Seleccioná una categoría'); return }
     if (!date)                             { setError('Fecha requerida'); return }
     setError(null)
@@ -48,7 +47,7 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
 
     const payload = {
       amount:         finalAmount,
-      description:    description.trim(),
+      description:    description.trim() || null,
       date,
       category_id:    categoryId,
       subcategory_id: subcategoryId || null,
@@ -127,7 +126,7 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
               </>
             )}
 
-            <label style={s.label} htmlFor="tx-desc">Descripción</label>
+            <label style={s.label} htmlFor="tx-desc">Descripción <span style={{ color: 'var(--tx3)' }}>(opcional)</span></label>
             <input
               id="tx-desc"
               style={s.input}
