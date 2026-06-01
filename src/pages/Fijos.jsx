@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { useTransactions } from '../hooks/useTransactions'
+import { useAuth } from '../context/AuthContext'
 import TransactionModal from '../components/TransactionModal'
 import ConfirmModal from '../components/ConfirmModal'
 import { fmtARS } from '../lib/fmt'
@@ -62,9 +63,11 @@ export default function Fijos() {
   const year   = target.getFullYear()
   const month  = target.getMonth()
 
-  const { fetchTransactions, updateTransaction, deleteTransaction } = useTransactions()
+  const { fetchTransactions, createTransaction, updateTransaction, deleteTransaction } = useTransactions()
+  const { user } = useAuth()
   const [fijos,      setFijos]      = useState([])
   const [loading,    setLoading]    = useState(true)
+  const [copying,    setCopying]    = useState(false)
   const [expanded,   setExpanded]   = useState(null)
   const [txModal,    setTxModal]    = useState(false)   // false=closed | null=create | tx=edit
   const [confirmDel, setConfirmDel] = useState(null)
@@ -78,6 +81,26 @@ export default function Fijos() {
 
   useEffect(() => { load() }, [load])
   useEffect(() => { setExpanded(null) }, [monthOff])
+
+  async function copyFromPrevMonth() {
+    setCopying(true)
+    const prevTarget = new Date(year, month - 1, 1)
+    const { data: prevData } = await fetchTransactions({ year: prevTarget.getFullYear(), month: prevTarget.getMonth() })
+    const prevFijos = (prevData ?? []).filter(t => t.category?.type === 'fixed')
+    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
+    await Promise.all(prevFijos.map(f => createTransaction({
+      amount:         f.amount,
+      description:    f.description,
+      date:           dateStr,
+      category_id:    f.category_id,
+      subcategory_id: f.subcategory_id ?? null,
+      observations:   f.observations ?? null,
+      is_checked:     false,
+      user_id:        user.id,
+    })))
+    setCopying(false)
+    load()
+  }
 
   async function toggle(tx) {
     const next = !tx.is_checked
@@ -131,9 +154,18 @@ export default function Fijos() {
         {loading ? (
           <p style={{ color: 'var(--tx3)', textAlign: 'center', padding: '2rem', fontSize: 13 }}>Cargando...</p>
         ) : fijos.length === 0 ? (
-          <p style={{ color: 'var(--tx3)', textAlign: 'center', padding: '2rem', fontSize: 13, lineHeight: 1.6 }}>
-            Sin gastos fijos este mes.<br/>Tocá + para agregar.
-          </p>
+          <div style={{ textAlign: 'center', padding: '2rem 1.5rem' }}>
+            <p style={{ color: 'var(--tx3)', fontSize: 13, lineHeight: 1.6, margin: '0 0 16px' }}>
+              Sin gastos fijos este mes.<br/>Tocá + para agregar.
+            </p>
+            <button
+              onClick={copyFromPrevMonth}
+              disabled={copying}
+              style={{ padding: '8px 18px', borderRadius: 10, border: '1px solid var(--bd2)', background: 'var(--s2)', color: copying ? 'var(--tx3)' : 'var(--tx2)', fontSize: 13, cursor: copying ? 'default' : 'pointer', fontFamily: 'inherit' }}
+            >
+              {copying ? 'Copiando...' : 'Copiar del mes anterior'}
+            </button>
+          </div>
         ) : (
           <div className="card" style={{ margin: '0 16px 16px', padding: 0 }}>
             {fijos.map((fi, idx) => {
