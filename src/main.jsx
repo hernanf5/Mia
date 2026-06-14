@@ -2,6 +2,7 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
 import { AuthProvider } from './context/AuthContext'
+import { DataProvider } from './context/DataContext'
 import ProtectedRoute from './components/ProtectedRoute'
 import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
@@ -15,17 +16,19 @@ createRoot(document.getElementById('root')).render(
   <StrictMode>
     <BrowserRouter>
       <AuthProvider>
-        <Routes>
-          <Route path="/login" element={<Login />} />
-          <Route element={<ProtectedRoute />}>
-            <Route path="/" element={<Layout />}>
-              <Route index element={<Dashboard />} />
-              <Route path="transactions" element={<Transactions />} />
-              <Route path="fijos" element={<Fijos />} />
-              <Route path="categories" element={<Categories />} />
+        <DataProvider>
+          <Routes>
+            <Route path="/login" element={<Login />} />
+            <Route element={<ProtectedRoute />}>
+              <Route path="/" element={<Layout />}>
+                <Route index element={<Dashboard />} />
+                <Route path="transactions" element={<Transactions />} />
+                <Route path="fijos" element={<Fijos />} />
+                <Route path="categories" element={<Categories />} />
+              </Route>
             </Route>
-          </Route>
-        </Routes>
+          </Routes>
+        </DataProvider>
       </AuthProvider>
     </BrowserRouter>
   </StrictMode>,
