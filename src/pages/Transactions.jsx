@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useTransactions } from '../hooks/useTransactions'
+import { useData } from '../context/DataContext'
 import TransactionModal from '../components/TransactionModal'
 import ConfirmModal from '../components/ConfirmModal'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
@@ -64,7 +65,8 @@ export default function Transactions() {
   const year   = target.getFullYear()
   const month  = target.getMonth()
 
-  const { fetchTransactions, deleteTransaction } = useTransactions()
+  const { getTransactionsForMonth, invalidateMonth } = useData()
+  const { deleteTransaction } = useTransactions()
   const [txns,         setTxns]         = useState([])
   const [loading,      setLoading]      = useState(true)
   const [selectedCats,    setSelectedCats]    = useState(new Set())
@@ -75,10 +77,10 @@ export default function Transactions() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await fetchTransactions({ year, month })
+    const data = await getTransactionsForMonth(year, month)
     setTxns(data ?? [])
     setLoading(false)
-  }, [year, month])
+  }, [year, month, getTransactionsForMonth])
 
   useEffect(() => { load() }, [load])
   useEffect(() => { setSelectedCats(new Set()); setSelectedSubcats(new Set()); setExpanded(null) }, [monthOff])
@@ -135,6 +137,7 @@ export default function Transactions() {
   async function handleDelete() {
     await deleteTransaction(confirmDel.id)
     setConfirmDel(null)
+    invalidateMonth(year, month) 
     load()
   }
 
@@ -271,7 +274,7 @@ export default function Transactions() {
       {txModal !== false && (
         <TransactionModal
           transaction={txModal}
-          onSave={() => { setTxModal(false); load() }}
+          onSave={() => { setTxModal(false); invalidateMonth(year, month); load() }}
           onClose={() => setTxModal(false)}
         />
       )}

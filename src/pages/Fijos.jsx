@@ -4,6 +4,7 @@ import { useAuth } from '../context/AuthContext'
 import TransactionModal from '../components/TransactionModal'
 import ConfirmModal from '../components/ConfirmModal'
 import { fmtARS } from '../lib/fmt'
+import { useData } from '../context/DataContext'
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -63,7 +64,8 @@ export default function Fijos() {
   const year   = target.getFullYear()
   const month  = target.getMonth()
 
-  const { fetchTransactions, createTransaction, updateTransaction, deleteTransaction } = useTransactions()
+  const {createTransaction, updateTransaction, deleteTransaction } = useTransactions()
+  const { getTransactionsForMonth, invalidateMonth, updateTransactionInCache } = useData()
   const { user } = useAuth()
   const [fijos,      setFijos]      = useState([])
   const [loading,    setLoading]    = useState(true)
@@ -74,7 +76,7 @@ export default function Fijos() {
 
   const load = useCallback(async () => {
     setLoading(true)
-    const { data } = await fetchTransactions({ year, month })
+    const data  = await getTransactionsForMonth(year, month)
     setFijos((data ?? []).filter(t => t.category?.type === 'fixed'))
     setLoading(false)
   }, [year, month])
@@ -85,7 +87,7 @@ export default function Fijos() {
   async function copyFromPrevMonth() {
     setCopying(true)
     const prevTarget = new Date(year, month - 1, 1)
-    const { data: prevData } = await fetchTransactions({ year: prevTarget.getFullYear(), month: prevTarget.getMonth() })
+    const prevData = await getTransactionsForMonth(prevTarget.getFullYear(), prevTarget.getMonth())
     const prevFijos = (prevData ?? []).filter(t => t.category?.type === 'fixed')
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
     await Promise.all(prevFijos.map(f => createTransaction({
@@ -99,6 +101,7 @@ export default function Fijos() {
       user_id:        user.id,
     })))
     setCopying(false)
+    invalidateMonth(year, month)
     load()
   }
 
@@ -106,11 +109,13 @@ export default function Fijos() {
     const next = !tx.is_checked
     setFijos(prev => prev.map(f => f.id === tx.id ? { ...f, is_checked: next } : f))
     await updateTransaction(tx.id, { is_checked: next })
+    updateTransactionInCache(year, month, { ...tx, is_checked: next })
   }
 
   async function handleDelete() {
     await deleteTransaction(confirmDel.id)
     setConfirmDel(null)
+    invalidateMonth(year, month)
     load()
   }
 
@@ -254,7 +259,7 @@ export default function Fijos() {
       {txModal !== false && (
         <TransactionModal
           transaction={txModal}
-          onSave={() => { setTxModal(false); load() }}
+          onSave={() => { setTxModal(false); invalidateMonth(year, month); load() }}
           onClose={() => setTxModal(false)}
         />
       )}
