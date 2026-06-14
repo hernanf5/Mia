@@ -8,6 +8,7 @@ import Layout from './components/Layout'
 import Dashboard from './pages/Dashboard'
 import Transactions from './pages/Transactions'
 import Fijos from './pages/Fijos'
+import Informe from './pages/Informe'
 import Categories from './pages/Categories'
 import Login from './pages/Login'
 import './index.css'
@@ -24,6 +25,7 @@ createRoot(document.getElementById('root')).render(
                 <Route index element={<Dashboard />} />
                 <Route path="transactions" element={<Transactions />} />
                 <Route path="fijos" element={<Fijos />} />
+                <Route path="informe" element={<Informe />} />
                 <Route path="categories" element={<Categories />} />
               </Route>
             </Route>
