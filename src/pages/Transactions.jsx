@@ -235,7 +235,7 @@ export default function Transactions() {
                           </span>
                         </div>
                         <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: isIncome ? 'var(--gr)' : 'var(--re)', flexShrink: 0 }}>
-                          {isIncome ? '+' : '−'}{fmtARS(tx.amount)}
+                          {isIncome ? '+' : '−'}{fmtARS(Math.abs(tx.amount))}
                         </span>
                       </div>
 

@@ -202,7 +202,7 @@ export default function Fijos() {
                       </span>
                     </div>
                     <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: fi.is_checked ? 'var(--tx3)' : '#ccc', flexShrink: 0, transition: 'color .2s' }}>
-                      {fmtARS(fi.amount)}
+                      {fmtARS(Math.abs(fi.amount))}
                     </span>
                   </div>
 
