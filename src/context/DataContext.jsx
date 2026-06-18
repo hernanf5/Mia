@@ -29,6 +29,11 @@ export function DataProvider({ children }) {
         return data
     }
 
+    async function reloadCategories() {
+        const { data } = await fetchCategories()
+        if (data) setCategories(data)
+    }
+
     function invalidateMonth(year, month) {
         delete cache.current[getKey(year, month)]
     }
@@ -47,6 +52,7 @@ export function DataProvider({ children }) {
         updateTransactionInCache,
         categories,
         loadingCategories,
+        reloadCategories,
         }}>
         {children}
         </DataContext.Provider>

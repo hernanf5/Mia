@@ -1,6 +1,7 @@
-import { useCallback, useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useCategories } from '../hooks/useCategories'
+import { useData } from '../context/DataContext'
 import CategoryModal from '../components/CategoryModal'
 import SubcategoryModal from '../components/SubcategoryModal'
 import ConfirmModal from '../components/ConfirmModal'
@@ -45,29 +46,20 @@ const PlusIcon = () => (
 
 export default function Categories() {
   const { user } = useAuth()
+  const { categories, loadingCategories, reloadCategories } = useData()
   const {
-    fetchCategories, fetchSubcategories,
+    fetchSubcategories,
     createCategory,  updateCategory,  deleteCategory,
     createSubcategory, updateSubcategory, deleteSubcategory,
   } = useCategories()
 
-  const [categories, setCategories] = useState([])
   const [subMap, setSubMap]         = useState({})
   const [expanded, setExpanded]     = useState({})
-  const [loading, setLoading]       = useState(true)
 
   // modal state
   const [catModal, setCatModal]       = useState(null)  // null | 'create' | category
   const [subModal, setSubModal]       = useState(null)  // null | { category } | { category, subcategory }
   const [confirmDel, setConfirmDel]   = useState(null)  // null | { type: 'cat'|'sub', item, parentId? }
-
-  const loadCategories = useCallback(async () => {
-    const { data } = await fetchCategories()
-    setCategories(data ?? [])
-    setLoading(false)
-  }, [])
-
-  useEffect(() => { loadCategories() }, [loadCategories])
 
   async function toggleExpand(cat) {
     const opening = !expanded[cat.id]
@@ -92,7 +84,7 @@ export default function Categories() {
       const { error } = await updateCategory(catModal.id, formData)
       if (error) return { error }
     }
-    await loadCategories()
+    await reloadCategories()
     setCatModal(null)
     return {}
   }
@@ -102,7 +94,7 @@ export default function Categories() {
     await deleteCategory(cat.id)
     setSubMap(prev => { const n = { ...prev }; delete n[cat.id]; return n })
     setExpanded(prev => { const n = { ...prev }; delete n[cat.id]; return n })
-    await loadCategories()
+    await reloadCategories()
     setConfirmDel(null)
   }
 
@@ -130,7 +122,7 @@ export default function Categories() {
     return acc
   }, {})
 
-  if (loading) return (
+  if (loadingCategories) return (
     <div className="screen" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
       <p style={{ color: 'var(--tx3)', fontSize: 13 }}>Cargando...</p>
     </div>
