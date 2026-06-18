@@ -26,6 +26,9 @@ export default function Informe() {
     const [metrics, setMetrics] = useState(null)
     const [prevMetrics, setPrevMetrics] = useState(null)
     const [loading, setLoading] = useState(true)
+    const [advice, setAdvice] = useState([])
+    const [loadingAdvice, setLoadingAdvice] = useState(false)
+    const [adviceError, setAdviceError] = useState(null)
 
     const load = useCallback(async() => {
         setLoading(true)
@@ -44,6 +47,28 @@ export default function Informe() {
     }, [year, month])
 
     useEffect(() => { load() }, [load])
+
+    const fetchAdvice = async () => {
+        setLoadingAdvice(true)
+        setAdviceError(null)
+        const apiUrl = import.meta.env.PROD
+            ? '/api/advice'
+            : 'https://mia-expense-tracker.vercel.app/api/advice'
+        try {
+            const res = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ metrics, prevMetrics, month: month + 1, year }),
+            })
+            if (!res.ok) throw new Error(`Error ${res.status}`)
+            const data = await res.json()
+            setAdvice(data.advice)
+        } catch (err) {
+            setAdviceError(err.message)
+        } finally {
+            setLoadingAdvice(false)
+        }
+    }
 
     return (
         <div className="screen">
@@ -137,6 +162,44 @@ export default function Informe() {
                             })}
                         </div>
                     )}
+
+                    {/* Consejos IA */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                        <button
+                            onClick={fetchAdvice}
+                            disabled={loadingAdvice}
+                            style={{
+                                background: loadingAdvice ? 'var(--s2)' : 'var(--gr)',
+                                color: '#000',
+                                border: 'none',
+                                borderRadius: 10,
+                                padding: '10px 16px',
+                                fontSize: 13,
+                                fontWeight: 600,
+                                cursor: loadingAdvice ? 'not-allowed' : 'pointer',
+                                opacity: loadingAdvice ? 0.6 : 1,
+                                transition: 'opacity .15s',
+                            }}
+                        >
+                            {loadingAdvice ? 'Analizando...' : 'Generar consejos'}
+                        </button>
+
+                        {adviceError && (
+                            <p style={{ fontSize: 13, color: 'var(--re)', margin: 0 }}>{adviceError}</p>
+                        )}
+
+                        {advice.length > 0 && advice.map((tip, i) => (
+                            <div key={i} className="card" style={{
+                                background: 'var(--s2)',
+                                border: '1px solid var(--bd2)',
+                                fontSize: 13,
+                                color: 'var(--tx2)',
+                                lineHeight: 1.5,
+                            }}>
+                                {tip}
+                            </div>
+                        ))}
+                    </div>
 
                 </div>
             )}
