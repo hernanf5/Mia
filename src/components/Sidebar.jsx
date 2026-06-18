@@ -22,6 +22,14 @@ const PinIcon = () => (
     <path d="M5 17h14v-1.76a2 2 0 0 0-1.11-1.79l-1.78-.9A2 2 0 0 1 15 10.76V6h1a2 2 0 0 0 0-4H8a2 2 0 0 0 0 4h1v4.76a2 2 0 0 1-1.11 1.79l-1.78.9A2 2 0 0 0 5 15.24Z"/>
   </svg>
 )
+const ChartIcon = () => (
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
+    <line x1="18" y1="20" x2="18" y2="10"/>
+    <line x1="12" y1="20" x2="12" y2="4"/>
+    <line x1="6" y1="20" x2="6" y2="14"/>
+    <line x1="2" y1="20" x2="22" y2="20"/>
+  </svg>
+)
 const TagIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
     <path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/>
@@ -30,10 +38,11 @@ const TagIcon = () => (
 )
 
 const TABS = [
-  { path: '/',             label: 'Dashboard',      Icon: HomeIcon, exact: true },
-  { path: '/transactions', label: 'Transacciones',  Icon: ListIcon },
-  { path: '/fijos',        label: 'Gastos Fijos',   Icon: PinIcon  },
-  { path: '/categories',   label: 'Categorías',     Icon: TagIcon  },
+  { path: '/',             label: 'Dashboard',      Icon: HomeIcon,  exact: true },
+  { path: '/transactions', label: 'Transacciones',  Icon: ListIcon  },
+  { path: '/fijos',        label: 'Gastos Fijos',   Icon: PinIcon   },
+  { path: '/informe',      label: 'Informe',        Icon: ChartIcon },
+  { path: '/categories',   label: 'Categorías',     Icon: TagIcon   },
 ]
 
 export default function Sidebar() {

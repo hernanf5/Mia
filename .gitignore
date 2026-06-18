@@ -25,3 +25,6 @@ mockups
 *.njsproj
 *.sln
 *.sw?
+
+.vercel
+.env*
