@@ -31,9 +31,10 @@ const ThemeContext = createContext(null)
 export function ThemeProvider({ children }) {
   const { user } = useAuth()
   const [theme, setThemeState] = useState('aurora')
+  const [loadingTheme, setLoadingTheme] = useState(true)
 
   useEffect(() => {
-    if (!user) return
+    if (!user) { setLoadingTheme(false); return }
     supabase
       .from('user_preferences')
       .select('theme')
@@ -43,6 +44,7 @@ export function ThemeProvider({ children }) {
         if (data?.theme && THEMES[data.theme]) {
           setThemeState(data.theme)
         }
+        setLoadingTheme(false)
       })
   }, [user])
 
@@ -56,7 +58,7 @@ export function ThemeProvider({ children }) {
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, themeConfig: THEMES[theme], setTheme }}>
+    <ThemeContext.Provider value={{ theme, themeConfig: THEMES[theme], setTheme, loadingTheme }}>
       {children}
     </ThemeContext.Provider>
   )

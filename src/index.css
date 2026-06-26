@@ -323,6 +323,8 @@ html, body {
   }
 }
 
+@keyframes spin { to { transform: rotate(360deg) } }
+
 @keyframes miaFloat {
   0%,100% { transform: translate(0,0) scale(1); }
   50% { transform: translate(30px,-26px) scale(1.08); }

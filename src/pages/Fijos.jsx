@@ -131,6 +131,7 @@ export default function Fijos() {
 
       {/* Scrollable content */}
       <div className="screen" style={{ paddingBottom: 0 }}>
+        <div style={{ maxWidth: 900, margin: '0 auto', width: '100%' }}>
         {/* Header */}
         <div style={{ padding: '6px 16px 12px' }}>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
@@ -228,6 +229,7 @@ export default function Fijos() {
             })}
           </div>
         )}
+        </div>
       </div>
 
       {/* Sticky footer — sits between scrollable content and nav spacer */}
