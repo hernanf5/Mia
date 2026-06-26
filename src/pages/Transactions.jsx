@@ -143,6 +143,7 @@ export default function Transactions() {
 
   return (
     <div className="screen">
+      <div style={{ maxWidth: 900, margin: '0 auto' }}>
       {/* Header */}
       <div style={{ padding: '6px 16px 12px' }}>
         <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>Transacciones</div>
@@ -203,20 +204,19 @@ export default function Transactions() {
           Sin transacciones este mes
         </p>
       ) : (
-        <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 16 }}>
+        <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 900, margin: '0 auto', width: '100%' }}>
           {groups.map(([lbl, items]) => (
             <div key={lbl}>
               <div className="slbl" style={{ marginBottom: 6, paddingLeft: 2 }}>{lbl}</div>
-              <div className="card" style={{ padding: 0 }}>
-                {items.map((tx, idx) => {
+              <div>
+                {items.map((tx) => {
                   const isOpen   = expanded === tx.id
                   const isIncome = Number(tx.amount) > 0
-                  const isLast   = idx === items.length - 1
                   return (
                     <div key={tx.id}>
                       <div
-                        className="tx-r"
-                        style={{ cursor: 'pointer', borderBottom: (!isLast || isOpen) ? '1px solid var(--bd)' : 'none' }}
+                        className="tx-r card"
+                        style={{ cursor: 'pointer' }}
                         onClick={() => setExpanded(isOpen ? null : tx.id)}
                       >
                         <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--s2)', border: '1px solid var(--bd)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
@@ -229,7 +229,7 @@ export default function Transactions() {
                             </span>
                             {tx.observations && <div className="note-dot" />}
                           </div>
-                          <span style={{ fontSize: 11, color: '#555' }}>
+                          <span style={{ fontSize: 11, color: 'var(--tx2)' }}>
                             {tx.category?.name ?? '—'}
                             {tx.subcategory?.name ? ` · ${tx.subcategory.name}` : ''}
                           </span>
@@ -240,7 +240,15 @@ export default function Transactions() {
                       </div>
 
                       {isOpen && (
-                        <div style={{ padding: '10px 14px 12px', background: 'rgba(0,0,0,.2)' }}>
+                        <div style={{
+                          padding: '12px 16px 14px',
+                          background: 'rgba(255,255,255,0.04)',
+                          backdropFilter: 'blur(22px) saturate(140%)',
+                          WebkitBackdropFilter: 'blur(22px) saturate(140%)',
+                          border: '1px solid rgba(255,255,255,0.08)',
+                          borderRadius: 18,
+                          marginBottom: 8,
+                        }}>
                           {tx.observations && (
                             <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', borderRadius: 8, padding: '8px 10px', background: 'rgba(245,158,11,.05)', fontSize: 12, color: 'var(--tx2)', lineHeight: 1.5, marginBottom: 10 }}>
                               <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--am)', flexShrink: 0, marginTop: '0.35em' }} />
@@ -265,6 +273,7 @@ export default function Transactions() {
           ))}
         </div>
       )}
+      </div>
 
       {/* FAB */}
       <button style={s.fab} className="fab-r" onClick={() => setTxModal(null)} aria-label="Nueva transacción">

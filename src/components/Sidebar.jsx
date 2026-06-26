@@ -1,6 +1,8 @@
+import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
 import Logo from '../assets/mia.svg'
+import ProfileModal from './ProfileModal'
 
 const HomeIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -49,10 +51,12 @@ export default function Sidebar() {
   const navigate     = useNavigate()
   const { pathname } = useLocation()
   const { user, signOut } = useAuth()
+  const [showProfile, setShowProfile] = useState(false)
 
   const initial = user?.email?.[0]?.toUpperCase() ?? '?'
 
   async function handleSignOut() {
+    setShowProfile(false)
     await signOut()
     navigate('/login')
   }
@@ -60,55 +64,61 @@ export default function Sidebar() {
   const isActive = tab => tab.exact ? pathname === tab.path : pathname.startsWith(tab.path)
 
   return (
-    <aside className="sidebar">
-      {/* Logo */}
-      <div style={{ padding: '0 20px 24px', flexShrink: 0 }}>
-        <img src={Logo} alt="Mia" style={{ width: 100, height: 100, display: 'block' }} />
-      </div>
+    <>
+      {showProfile && (
+        <ProfileModal
+          onClose={() => setShowProfile(false)}
+          onSignOut={handleSignOut}
+        />
+      )}
 
-      {/* Nav links */}
-      {TABS.map(tab => {
-        const active = isActive(tab)
-        return (
-          <button
-            key={tab.path}
-            className={'sidebar-nav-item' + (active ? ' active' : '')}
-            onClick={() => navigate(tab.path)}
-            aria-current={active ? 'page' : undefined}
-          >
-            <div style={{ width: 18, height: 18, flexShrink: 0 }}>
-              <tab.Icon />
-            </div>
-            <span>{tab.label}</span>
-          </button>
-        )
-      })}
-
-      {/* User footer */}
-      <div style={{ marginTop: 'auto', padding: '20px 20px 0', borderTop: '1px solid var(--bd)', flexShrink: 0 }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
-          <div style={{
-            width: 30, height: 30, borderRadius: '50%',
-            background: 'var(--s2)', border: '1px solid var(--bd2)',
-            display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 12, color: 'var(--tx2)', fontWeight: 700, flexShrink: 0,
-          }}>{initial}</div>
-          <span style={{ fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-            {user?.email}
-          </span>
+      <aside className="sidebar">
+        <div style={{ padding: '0 20px 24px', flexShrink: 0 }}>
+          <img src={Logo} alt="Mia" style={{ width: 100, height: 100, display: 'block' }} />
         </div>
-        <button
-          onClick={handleSignOut}
-          style={{
-            width: '100%', padding: '8px', borderRadius: 8,
-            background: 'rgba(244,63,94,.08)', border: '1px solid rgba(244,63,94,.2)',
-            color: 'var(--re)', fontSize: 12, fontWeight: 500,
-            cursor: 'pointer', fontFamily: 'inherit', marginBottom: 4,
-          }}
-        >
-          Cerrar sesión
-        </button>
-      </div>
-    </aside>
+
+        {TABS.map(tab => {
+          const active = isActive(tab)
+          return (
+            <button
+              key={tab.path}
+              className={'sidebar-nav-item' + (active ? ' active' : '')}
+              onClick={() => navigate(tab.path)}
+              aria-current={active ? 'page' : undefined}
+            >
+              <div style={{ width: 18, height: 18, flexShrink: 0 }}>
+                <tab.Icon />
+              </div>
+              <span>{tab.label}</span>
+            </button>
+          )
+        })}
+
+        <div style={{ marginTop: 'auto', padding: '20px 20px 0', borderTop: '1px solid var(--bd)', flexShrink: 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 9, marginBottom: 12 }}>
+            <div style={{
+              width: 30, height: 30, borderRadius: '50%',
+              background: 'linear-gradient(135deg,#22d3ee,#a855f7)',
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              fontSize: 12, color: '#fff', fontWeight: 700, flexShrink: 0,
+            }}>{initial}</div>
+            <span style={{ fontSize: 12, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+              {user?.email}
+            </span>
+          </div>
+          <button
+            onClick={() => setShowProfile(true)}
+            style={{
+              width: '100%', padding: '8px', borderRadius: 8,
+              background: 'var(--s2)', border: '1px solid var(--bd2)',
+              color: 'var(--tx2)', fontSize: 12, fontWeight: 500,
+              cursor: 'pointer', fontFamily: 'inherit', marginBottom: 4,
+            }}
+          >
+            Perfil y tema
+          </button>
+        </div>
+      </aside>
+    </>
   )
 }

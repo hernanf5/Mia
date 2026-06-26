@@ -1,6 +1,7 @@
 import { useState } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
+import ProfileModal from './ProfileModal'
 
 const HomeIcon = () => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round">
@@ -69,57 +70,14 @@ export default function BottomNav() {
   return (
     <>
       {showProfile && (
-        <div
-          onClick={() => setShowProfile(false)}
-          style={{ position: 'fixed', inset: 0, zIndex: 150 }}
-        >
-          <div
-            onClick={e => e.stopPropagation()}
-            style={{
-              position: 'absolute',
-              bottom: 68,
-              right: 12,
-              background: '#1a1a1a',
-              border: '1px solid #27272a',
-              borderRadius: 12,
-              padding: '1rem',
-              minWidth: 220,
-              boxShadow: '0 -4px 24px rgba(0,0,0,.6)',
-            }}
-          >
-            <p style={{
-              color: '#71717a',
-              fontSize: '0.78rem',
-              margin: '0 0 0.75rem',
-              wordBreak: 'break-all',
-            }}>
-              {user?.email}
-            </p>
-            <button
-              onClick={handleSignOut}
-              style={{
-                width: '100%',
-                background: 'rgba(244,63,94,.1)',
-                border: '1px solid rgba(244,63,94,.25)',
-                color: '#f43f5e',
-                borderRadius: 8,
-                padding: '0.6rem',
-                fontSize: '0.88rem',
-                fontWeight: 500,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-              }}
-            >
-              Cerrar sesión
-            </button>
-          </div>
-        </div>
+        <ProfileModal
+          onClose={() => setShowProfile(false)}
+          onSignOut={handleSignOut}
+        />
       )}
 
       <nav className="mobile-nav" style={{
         height: 60,
-        background: '#111',
-        borderTop: '1px solid #1c1c1c',
         display: 'flex',
         position: 'absolute',
         bottom: 0,
@@ -132,7 +90,7 @@ export default function BottomNav() {
           return (
             <button
               key={tab.path}
-              onClick={() => { setShowProfile(false); navigate(tab.path) }}
+              onClick={() => navigate(tab.path)}
               aria-current={active ? 'page' : undefined}
               style={{
                 flex: 1,
@@ -144,7 +102,7 @@ export default function BottomNav() {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                color: active ? 'var(--gr)' : '#404040',
+                color: active ? 'var(--gr)' : 'var(--tx3)',
                 transition: 'color .15s',
                 fontFamily: 'inherit',
               }}
@@ -174,13 +132,14 @@ export default function BottomNav() {
             width: 22,
             height: 22,
             borderRadius: '50%',
-            background: showProfile ? '#10b981' : '#27272a',
+            background: showProfile ? 'var(--gr)' : 'var(--s2)',
+            border: `1px solid ${showProfile ? 'var(--gr)' : 'var(--bd2)'}`,
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 11,
             fontWeight: 700,
-            color: showProfile ? '#000' : '#888',
+            color: showProfile ? '#000' : 'var(--tx2)',
             transition: 'background .15s, color .15s',
             flexShrink: 0,
           }}>
@@ -190,7 +149,7 @@ export default function BottomNav() {
             fontSize: 10,
             fontWeight: 500,
             letterSpacing: '.02em',
-            color: showProfile ? 'var(--gr)' : '#404040',
+            color: showProfile ? 'var(--gr)' : 'var(--tx3)',
             transition: 'color .15s',
           }}>
             Perfil
