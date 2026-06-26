@@ -46,6 +46,13 @@ function BarTooltip({ active, payload, label }) {
   )
 }
 
+function glassColor(hex) {
+  const r = parseInt(hex.slice(1,3), 16)
+  const g = parseInt(hex.slice(3,5), 16)
+  const b = parseInt(hex.slice(5,7), 16)
+  return `rgba(${r},${g},${b},0.75)`
+}
+
 export default function Dashboard() {
   const [monthOff, setMonthOff]     = useState(0)
   const [showTxModal, setShowTxModal] = useState(false)
@@ -138,9 +145,9 @@ export default function Dashboard() {
                 <div className="card" style={{ padding: 16 }}>
                   <div className="slbl" style={{ marginBottom: 12 }}>Por categoría</div>
                   <div style={{ position: 'relative', width: 160, height: 160, margin: '0 auto' }}>
-                    <PieChart width={160} height={160}>
-                      <Pie data={byCategory} cx={80} cy={80} innerRadius={52} outerRadius={72} paddingAngle={3} dataKey="amount" isAnimationActive>
-                        {byCategory.map((entry, i) => <Cell key={i} fill={entry.color} />)}
+                    <PieChart width={160} height={160} style={{ filter: 'saturate(1.2) brightness(1.1)' }}>
+                      <Pie data={byCategory} cx={80} cy={80} innerRadius={52} outerRadius={72} paddingAngle={3} dataKey="amount" isAnimationActive stroke="rgba(255,255,255,0.15)" strokeWidth={1.5}>
+                        {byCategory.map((entry, i) => <Cell key={i} fill={glassColor(entry.color)} />)}
                       </Pie>
                     </PieChart>
                     <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
