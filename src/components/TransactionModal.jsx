@@ -171,14 +171,23 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
 
 const s = {
   overlay: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
-    display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 200,
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.85)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 300,
+    padding: '16px',
   },
   modal: {
-    background: 'var(--s1)', borderRadius: '16px 16px 0 0',
-    width: '100%', maxWidth: 430,
-    boxShadow: '0 -4px 32px rgba(0,0,0,0.6)',
-    maxHeight: '90vh',
+    background: 'rgba(15,25,20,0.97)',
+    backdropFilter: 'blur(30px) saturate(150%)',
+    WebkitBackdropFilter: 'blur(30px) saturate(150%)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 24,
+    width: '100%', maxWidth: 480,
+    boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
+    maxHeight: '85vh',
     display: 'flex', flexDirection: 'column',
     overflow: 'hidden',
   },
@@ -197,7 +206,7 @@ const s = {
   },
   label: { color: 'var(--tx2)', fontSize: '0.8rem' },
   input: {
-    background: 'var(--bg)', border: '1px solid var(--bd2)', borderRadius: 8,
+    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8,
     color: 'var(--tx)', padding: '0.6rem 0.75rem', fontSize: '0.95rem',
     outline: 'none', fontFamily: 'inherit', width: '100%',
   },
