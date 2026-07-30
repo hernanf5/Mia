@@ -28,6 +28,9 @@ src/
   hooks/        useDashboard, useTransactions, useCategories
   context/      AuthContext (useAuth → user, signIn, signUp, signOut)
   lib/          supabaseClient.js, fmt.js (fmtARS)
+api/
+  advice.js     consejos financieros con Groq
+  whatsapp.js   webhook Twilio para registrar gastos por WhatsApp
 ```
 
 ## Tokens CSS (src/index.css :root)
@@ -99,8 +102,42 @@ src/
 - `categories` — `id, user_id, name, type (income|fixed|variable), color, icon`
 - `subcategories` — `id, user_id, category_id, name`
 - `transactions` — `id, user_id, amount (negativo=gasto), description, date, category_id, subcategory_id, observations, is_checked`
+- `whatsapp_users` — `phone (PK, con prefijo whatsapp:), user_id`
+- `pending_transactions` — `id, user_phone, amount (positivo), description, type, category_id, message_sid (UNIQUE), created_at, user_id`
 
 **RLS**: todas las tablas tienen `auth.uid() = user_id`. Si un INSERT falla silenciosamente, verificar políticas en Supabase Dashboard.
+
+## Integración WhatsApp (api/whatsapp.js)
+
+Webhook de Twilio para registrar gastos por mensaje. Reemplazó un flujo de n8n.
+
+### Flujo
+1. Mensaje entra → validar firma Twilio (HMAC-SHA1 con `TWILIO_AUTH_TOKEN`, 403 si inválida)
+2. Buscar `From` en `whatsapp_users` — no registrado → mensaje de error
+3. `SI` → confirmar pending más reciente: insert en `transactions` + delete pending
+4. `NO` → borrar pendings del usuario
+5. Otro texto → Groq (`openai/gpt-oss-20b`) interpreta contra las categorías del usuario → guarda en `pending_transactions` → responde resumen pidiendo SI/NO
+
+### Convenciones del webhook
+- **Respuestas siempre TwiML** (XML), nunca API REST de Twilio — no requiere auth adicional
+- **Siempre responder 200** ante error interno — Twilio reintenta con otros códigos
+- **Dedup**: check de `message_sid` antes de llamar a Groq + catch de `23505` en insert (reintentos de Twilio). Ambos responden TwiML vacío
+- **Signo del monto**: pending guarda positivo; al confirmar, `income` → `+`, `fixed`/`variable` → `-`
+- **`is_checked`**: fijo confirmado por WhatsApp entra como `true` (ya se pagó)
+- Cliente Supabase propio con **service role key** (bypass RLS) — nunca usar el del frontend
+- Escapar XML en mensajes (descripción puede traer `&`/`<`)
+
+### Env vars (Vercel)
+- `SUPABASE_SERVICE_ROLE_KEY` — server-only
+- `TWILIO_AUTH_TOKEN` — validación de firma
+- `GROQ_API_KEY` — compartida con `api/advice.js`
+- URL de Supabase: `SUPABASE_URL` con fallback a `VITE_SUPABASE_URL`
+
+### Operativo
+- Twilio **sandbox** (`+14155238886`): membresía vence cada 72hs — remandar `join <código>`
+- Webhook configurado: `https://mia-expense-tracker.vercel.app/api/whatsapp` (POST)
+- Vinculación de número: sección WhatsApp en `ProfileModal` (guarda `whatsapp:+549...`)
+- `whatsapp_users` tiene RLS propia (select/insert/delete `auth.uid() = user_id`) para la UI
 
 ## Bugs resueltos (referencia)
 
