@@ -24,11 +24,13 @@ export default async function handler(req, res) {
     const from = params.From ?? ''
     const messageSid = params.MessageSid ?? ''
 
-    const { data: waUser } = await supabase
+    const { data: waUser, error: waError } = await supabase
       .from('whatsapp_users')
       .select('user_id')
       .eq('phone', from)
       .maybeSingle()
+
+    if (waError) console.error('whatsapp_users lookup error:', waError)
 
     if (!waUser) {
       return twiml(res, '❌ No estás registrado en Mia. Registrá tu número desde la app.')
