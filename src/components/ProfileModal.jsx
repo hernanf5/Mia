@@ -1,5 +1,7 @@
+import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useTheme } from '../context/ThemeContext'
+import { supabase } from '../lib/supabaseClient'
 
 const THEMES_META = {
   aurora:   { label: 'Aurora',   dots: ['#10b981', '#22d3ee', '#2dd4bf'] },
@@ -10,6 +12,56 @@ const THEMES_META = {
 export default function ProfileModal({ onClose, onSignOut }) {
   const { user } = useAuth()
   const { theme, setTheme } = useTheme()
+
+  const [waPhone, setWaPhone] = useState(null)
+  const [phoneInput, setPhoneInput] = useState('')
+  const [waError, setWaError] = useState(null)
+  const [waBusy, setWaBusy] = useState(false)
+
+  useEffect(() => {
+    if (!user) return
+    supabase
+      .from('whatsapp_users')
+      .select('phone')
+      .eq('user_id', user.id)
+      .maybeSingle()
+      .then(({ data }) => setWaPhone(data?.phone ?? null))
+  }, [user])
+
+  async function handleLink() {
+    const normalized = phoneInput.replace(/[\s\-()]/g, '')
+    if (!/^\+\d{8,15}$/.test(normalized)) {
+      setWaError('Formato inválido. Usá formato internacional: +5492657604851')
+      return
+    }
+    setWaError(null)
+    setWaBusy(true)
+    const { error } = await supabase
+      .from('whatsapp_users')
+      .insert({ phone: `whatsapp:${normalized}`, user_id: user.id })
+    setWaBusy(false)
+    if (error) {
+      setWaError(error.code === '23505' ? 'Ese número ya está vinculado a otra cuenta' : 'No se pudo vincular el número')
+      return
+    }
+    setWaPhone(`whatsapp:${normalized}`)
+    setPhoneInput('')
+  }
+
+  async function handleUnlink() {
+    setWaBusy(true)
+    const { error } = await supabase
+      .from('whatsapp_users')
+      .delete()
+      .eq('user_id', user.id)
+    setWaBusy(false)
+    if (error) {
+      setWaError('No se pudo desvincular el número')
+      return
+    }
+    setWaError(null)
+    setWaPhone(null)
+  }
 
   const initial = user?.email?.[0]?.toUpperCase() ?? '?'
 
@@ -90,6 +142,66 @@ export default function ProfileModal({ onClose, onSignOut }) {
             )
           })}
         </div>
+
+        <p className="slbl" style={{ marginBottom: 12 }}>WhatsApp</p>
+        {waPhone ? (
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 24 }}>
+            <span style={{
+              flex: 1, padding: '10px 12px', borderRadius: 12,
+              background: 'var(--grd)', border: '1px solid var(--grb)',
+              color: 'var(--gr)', fontSize: 13, fontWeight: 500,
+            }}>
+              ✓ {waPhone.replace('whatsapp:', '')}
+            </span>
+            <button
+              onClick={handleUnlink}
+              disabled={waBusy}
+              style={{
+                padding: '10px 14px', borderRadius: 12,
+                background: 'var(--s2)', border: '1px solid var(--bd2)',
+                color: 'var(--tx2)', fontSize: 13, cursor: 'pointer', fontFamily: 'inherit',
+              }}
+            >
+              Desvincular
+            </button>
+          </div>
+        ) : (
+          <div style={{ marginBottom: 24 }}>
+            <div style={{ display: 'flex', gap: 8 }}>
+              <input
+                value={phoneInput}
+                onChange={e => setPhoneInput(e.target.value)}
+                placeholder="+5492657604851"
+                inputMode="tel"
+                aria-label="Número de WhatsApp"
+                style={{
+                  flex: 1, minWidth: 0, padding: '10px 12px', borderRadius: 12,
+                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)',
+                  color: 'var(--tx)', fontSize: 13, outline: 'none', fontFamily: 'inherit',
+                }}
+                onFocus={e => e.target.style.setProperty('border-color', 'var(--gr)')}
+                onBlur={e => e.target.style.setProperty('border-color', 'rgba(255,255,255,0.10)')}
+              />
+              <button
+                onClick={handleLink}
+                disabled={waBusy}
+                style={{
+                  padding: '10px 14px', borderRadius: 12,
+                  background: 'var(--gr)', border: 'none',
+                  color: '#000', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                }}
+              >
+                {waBusy ? '...' : 'Vincular'}
+              </button>
+            </div>
+            <p style={{ color: 'var(--tx3)', fontSize: 11, margin: '8px 0 0' }}>
+              Vinculá tu número para registrar gastos mandando un mensaje de WhatsApp.
+            </p>
+          </div>
+        )}
+        {waError && (
+          <p style={{ color: 'var(--re)', fontSize: 12, margin: '-16px 0 16px' }}>{waError}</p>
+        )}
 
         <button
           onClick={onSignOut}
