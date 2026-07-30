@@ -39,47 +39,49 @@ export default function CategoryModal({ category, onSave, onClose }) {
         <h3 style={s.title}>{category ? 'Editar categoría' : 'Nueva categoría'}</h3>
 
         <form onSubmit={handleSubmit} style={s.form}>
-          <label style={s.label} htmlFor="cat-nombre">Nombre</label>
-          <input
-            id="cat-nombre"
-            style={s.input}
-            value={name}
-            onChange={e => setName(e.target.value)}
-            placeholder="Ej: Supermercado"
-            autoFocus
-          />
-
-          <label style={s.label} htmlFor="cat-tipo">Tipo</label>
-          <select id="cat-tipo" style={s.input} value={type} onChange={e => setType(e.target.value)}>
-            {TYPE_OPTIONS.map(o => (
-              <option key={o.value} value={o.value}>{o.label}</option>
-            ))}
-          </select>
-
-          <label style={s.label} htmlFor="cat-color">Color</label>
-          <div style={s.colorRow}>
+          <div style={s.scrollBody}>
+            <label style={s.label} htmlFor="cat-nombre">Nombre</label>
             <input
-              id="cat-color"
-              type="color"
-              style={s.colorPicker}
-              value={color}
-              onChange={e => setColor(e.target.value)}
+              id="cat-nombre"
+              style={s.input}
+              value={name}
+              onChange={e => setName(e.target.value)}
+              placeholder="Ej: Supermercado"
+              autoFocus
             />
-            <span style={s.colorHex}>{color}</span>
+
+            <label style={s.label} htmlFor="cat-tipo">Tipo</label>
+            <select id="cat-tipo" style={s.input} value={type} onChange={e => setType(e.target.value)}>
+              {TYPE_OPTIONS.map(o => (
+                <option key={o.value} value={o.value}>{o.label}</option>
+              ))}
+            </select>
+
+            <label style={s.label} htmlFor="cat-color">Color</label>
+            <div style={s.colorRow}>
+              <input
+                id="cat-color"
+                type="color"
+                style={s.colorPicker}
+                value={color}
+                onChange={e => setColor(e.target.value)}
+              />
+              <span style={s.colorHex}>{color}</span>
+            </div>
+
+            <label style={s.label} htmlFor="cat-icono">Ícono (opcional)</label>
+            <input
+              id="cat-icono"
+              style={s.input}
+              value={icon}
+              onChange={e => setIcon(e.target.value)}
+              placeholder="Ej: shopping-cart"
+            />
+
+            {error && <p style={s.error}>{error}</p>}
           </div>
 
-          <label style={s.label} htmlFor="cat-icono">Ícono (opcional)</label>
-          <input
-            id="cat-icono"
-            style={s.input}
-            value={icon}
-            onChange={e => setIcon(e.target.value)}
-            placeholder="Ej: shopping-cart"
-          />
-
-          {error && <p style={s.error}>{error}</p>}
-
-          <div style={s.actions}>
+          <div style={s.footer}>
             <button type="button" style={s.btnSecondary} onClick={onClose}>Cancelar</button>
             <button type="submit" style={s.btnPrimary} disabled={loading}>
               {loading ? 'Guardando...' : 'Guardar'}
@@ -93,21 +95,32 @@ export default function CategoryModal({ category, onSave, onClose }) {
 
 const s = {
   overlay: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
-    display: 'flex', alignItems: 'flex-end', justifyContent: 'center',
-    zIndex: 200,
+    position: 'fixed', inset: 0,
+    background: 'rgba(0,0,0,0.85)',
+    backdropFilter: 'blur(8px)',
+    WebkitBackdropFilter: 'blur(8px)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    zIndex: 300,
+    padding: '16px',
   },
   modal: {
-    background: 'var(--s1)', borderRadius: '16px 16px 0 0',
-    padding: '1.5rem', width: '100%', maxWidth: '430px',
-    boxShadow: '0 -4px 32px rgba(0,0,0,0.6)',
-    maxHeight: '90vh', overflowY: 'auto',
+    background: 'rgba(15,25,20,0.97)',
+    backdropFilter: 'blur(30px) saturate(150%)',
+    WebkitBackdropFilter: 'blur(30px) saturate(150%)',
+    border: '1px solid rgba(255,255,255,0.12)',
+    borderRadius: 24,
+    width: '100%', maxWidth: 480,
+    boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
+    maxHeight: '85vh',
+    display: 'flex', flexDirection: 'column',
+    overflow: 'hidden',
   },
-  title: { color: 'var(--tx)', margin: '0 0 1.25rem', fontSize: '1.1rem', fontWeight: 600 },
-  form: { display: 'flex', flexDirection: 'column', gap: '0.5rem' },
-  label: { color: 'var(--tx2)', fontSize: '0.8rem', marginBottom: '0' },
+  title: { color: 'var(--tx)', padding: '1.5rem 1.5rem 1rem', fontSize: '1.1rem', fontWeight: 600, flexShrink: 0, margin: 0 },
+  form: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 },
+  scrollBody: { flex: 1, overflowY: 'auto', padding: '0 1.5rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' },
+  label: { color: 'var(--tx2)', fontSize: '0.8rem' },
   input: {
-    background: 'var(--bg)', border: '1px solid var(--bd2)', borderRadius: '8px',
+    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px',
     color: 'var(--tx)', padding: '0.6rem 0.75rem', fontSize: '0.95rem', outline: 'none',
     fontFamily: 'inherit', width: '100%',
   },
@@ -115,7 +128,7 @@ const s = {
   colorPicker: { width: '48px', height: '40px', border: 'none', background: 'none', cursor: 'pointer', padding: 0 },
   colorHex: { color: 'var(--tx2)', fontSize: '0.85rem', fontFamily: 'monospace' },
   error: { color: 'var(--re)', fontSize: '0.82rem', margin: '0.25rem 0 0' },
-  actions: { display: 'flex', gap: '0.75rem', marginTop: '0.75rem' },
+  footer: { display: 'flex', gap: '0.75rem', padding: '0.75rem 1.5rem 1.25rem', borderTop: '1px solid var(--bd)', flexShrink: 0 },
   btnPrimary: {
     flex: 1, padding: '0.65rem', background: 'var(--gr)', color: '#000',
     border: 'none', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
