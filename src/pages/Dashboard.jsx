@@ -64,7 +64,7 @@ export default function Dashboard() {
   const year   = target.getFullYear()
   const month  = target.getMonth()
 
-  const { metrics, history, loading, reload } = useDashboard({ year, month })
+  const { metrics, history, loading } = useDashboard({ year, month })
 
   const totalIncome    = metrics?.totalIncome    ?? 0
   const totalFixedPaid = metrics?.totalFixedPaid ?? 0
@@ -76,9 +76,9 @@ export default function Dashboard() {
   const fixedPct = totalIncome > 0 ? Math.min(totalFixedPaid / totalIncome * 100, 100)                         : 0
   const varPct   = totalIncome > 0 ? Math.min(totalVariable  / totalIncome * 100, Math.max(0, 100 - fixedPct)) : 0
 
+  // El contexto ya actualizó el caché con el registro guardado
   function handleTxSave() {
     setShowTxModal(false)
-    reload()
   }
 
   return (

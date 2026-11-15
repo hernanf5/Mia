@@ -1,13 +1,15 @@
 import { supabase } from '../lib/supabaseClient'
 
+// Nivel de módulo: referencia estable (la usa DataContext en efectos)
+export async function fetchCategories() {
+  const { data, error } = await supabase
+    .from('categories')
+    .select('*')
+    .order('name')
+  return { data, error }
+}
+
 export function useCategories() {
-  async function fetchCategories() {
-    const { data, error } = await supabase
-      .from('categories')
-      .select('*')
-      .order('name')
-    return { data, error }
-  }
 
   async function fetchSubcategories(categoryId) {
     const { data, error } = await supabase

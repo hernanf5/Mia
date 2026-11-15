@@ -1,14 +1,18 @@
 import { useEffect, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import { useCategories } from '../hooks/useCategories'
-import { useTransactions } from '../hooks/useTransactions'
+import { useData } from '../context/DataContext'
 
-const today = () => new Date().toISOString().slice(0, 10)
+// Fecha local (toISOString usa UTC: en Argentina después de las 21hs daría mañana)
+const today = () => {
+  const d = new Date()
+  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+}
 
 export default function TransactionModal({ transaction = null, onSave, onClose }) {
   const { user }            = useAuth()
   const { fetchCategories, fetchSubcategories } = useCategories()
-  const { createTransaction, updateTransaction } = useTransactions()
+  const { createTransaction, updateTransaction } = useData()
 
   const [categories,    setCategories]    = useState([])
   const [subcategories, setSubcategories] = useState([])
@@ -55,13 +59,13 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
       user_id:        user.id,
     }
 
-    const { error: dbErr } = transaction
-      ? await updateTransaction(transaction.id, payload)
+    const { data: saved, error: dbErr } = transaction
+      ? await updateTransaction(transaction, payload)
       : await createTransaction(payload)
 
     setLoading(false)
     if (dbErr) { setError(dbErr.message); return }
-    onSave()
+    onSave?.(saved)
   }
 
   const grouped = {

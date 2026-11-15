@@ -27,7 +27,7 @@ src/
                 SubcategoryModal, ConfirmModal, ProtectedRoute
   hooks/        useDashboard, useTransactions, useCategories
   context/      AuthContext (useAuth → user, signIn, signUp, signOut)
-  lib/          supabaseClient.js, fmt.js (fmtARS)
+  lib/          supabaseClient.js, fmt.js (fmtARS), transactionStore.js (caché)
 api/
   advice.js     consejos financieros con Groq
   whatsapp.js   webhook Twilio para registrar gastos por WhatsApp
@@ -96,6 +96,14 @@ api/
 - Número grande: `available` (verde si ≥ 0, rojo si < 0)
 - Subtítulo: `de $X de ingresos` en `var(--tx2)`
 - `fmtARS` usa `Math.abs` — el color comunica el signo, no el número
+
+### DataContext — caché de transacciones
+- Caché por mes (`YYYY-MM`) en `src/lib/transactionStore.js` (JS plano, sin React); `DataContext` lo instancia y re-renderiza vía `version`. **Toda mutación de transacciones pasa por el contexto**: `createTransaction`, `createTransactions`, `updateTransaction(prevTx, updates)`, `deleteTransaction(tx)`, `toggleChecked(tx)` — NO usar `useTransactions` directo desde páginas/componentes
+- Cada mutación actualiza el caché de forma inmutable con el registro que devuelve Supabase, usando el mes de **`tx.date`** (no el mes que se está viendo)
+- Lectura: `useMonthTransactions(year, month)` / `useMonthsTransactions([{year, month}])` — se re-sincronizan solos tras cada mutación; no hace falta invalidar ni recargar a mano
+- Generación por mes + dedup de requests en vuelo: un fetch que arrancó antes de una mutación no pisa el caché
+- El caché se limpia al cambiar de usuario y al volver a la pestaña tras 30s oculta (trae gastos cargados por WhatsApp)
+- Fecha por defecto del modal: local, no `toISOString()` (UTC daba el día siguiente después de las 21hs)
 
 ## Supabase — Tablas principales
 

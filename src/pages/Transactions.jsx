@@ -1,6 +1,5 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useTransactions } from '../hooks/useTransactions'
-import { useData } from '../context/DataContext'
+import { useEffect, useState } from 'react'
+import { useData, useMonthTransactions } from '../context/DataContext'
 import TransactionModal from '../components/TransactionModal'
 import ConfirmModal from '../components/ConfirmModal'
 import MultiSelectDropdown from '../components/MultiSelectDropdown'
@@ -65,24 +64,14 @@ export default function Transactions() {
   const year   = target.getFullYear()
   const month  = target.getMonth()
 
-  const { getTransactionsForMonth, invalidateMonth } = useData()
-  const { deleteTransaction } = useTransactions()
-  const [txns,         setTxns]         = useState([])
-  const [loading,      setLoading]      = useState(true)
+  const { deleteTransaction } = useData()
+  const { data: txns, loading } = useMonthTransactions(year, month)
   const [selectedCats,    setSelectedCats]    = useState(new Set())
   const [selectedSubcats, setSelectedSubcats] = useState(new Set())
   const [expanded,   setExpanded]   = useState(null)
   const [txModal,    setTxModal]    = useState(false)
   const [confirmDel, setConfirmDel] = useState(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const data = await getTransactionsForMonth(year, month)
-    setTxns(data ?? [])
-    setLoading(false)
-  }, [year, month, getTransactionsForMonth])
-
-  useEffect(() => { load() }, [load])
   useEffect(() => { setSelectedCats(new Set()); setSelectedSubcats(new Set()); setExpanded(null) }, [monthOff])
 
   // Base: exclude unchecked fixed (not real expenses yet)
@@ -135,10 +124,9 @@ export default function Transactions() {
   }
 
   async function handleDelete() {
-    await deleteTransaction(confirmDel.id)
+    const { error } = await deleteTransaction(confirmDel)
+    if (error) { window.alert(`No se pudo eliminar: ${error.message}`); return }
     setConfirmDel(null)
-    invalidateMonth(year, month) 
-    load()
   }
 
   return (
@@ -283,7 +271,7 @@ export default function Transactions() {
       {txModal !== false && (
         <TransactionModal
           transaction={txModal}
-          onSave={() => { setTxModal(false); invalidateMonth(year, month); load() }}
+          onSave={() => setTxModal(false)}
           onClose={() => setTxModal(false)}
         />
       )}

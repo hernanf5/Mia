@@ -1,51 +1,40 @@
-import { useCallback, useEffect, useState } from 'react'
-import { useData } from '../context/DataContext'
+import { useMemo } from 'react'
+import { useMonthsTransactions } from '../context/DataContext'
 import { computeMetrics } from '../lib/metrics'
 
 const MONTHS_SHORT = ['Ene','Feb','Mar','Abr','May','Jun','Jul','Ago','Sep','Oct','Nov','Dic']
 
 
 export function useDashboard({ year, month }) {
-  const { getTransactionsForMonth } = useData()
-  const [metrics, setMetrics] = useState(null)
-  const [history, setHistory] = useState([])
-  const [loading, setLoading] = useState(true)
-
-  const load = useCallback(async () => {
-    setLoading(true)
-
-    const histMonths = Array.from({ length: 3 }, (_, i) => {
+  // [mes actual, ...3 meses de historial]
+  const months = useMemo(() => [
+    { year, month },
+    ...Array.from({ length: 3 }, (_, i) => {
       const d = new Date(year, month - 3 + i, 1)
       return { year: d.getFullYear(), month: d.getMonth() }
-    })
+    }),
+  ], [year, month])
 
-    const [currentData, ...histData] = await Promise.all([
-      getTransactionsForMonth( year, month ),
-      ...histMonths.map(({ year: y, month: m }) => getTransactionsForMonth( y, m )),
-    ])
+  const { data, loading } = useMonthsTransactions(months)
 
-    setMetrics(computeMetrics(currentData ?? []))
+  const metrics = useMemo(
+    () => (loading ? null : computeMetrics(data[0])),
+    [loading, data]
+  )
 
-    setHistory(
-      histMonths.map(({ year: y, month: m }, i) => {
-        const m2 = computeMetrics(histData[i] ?? [])
-        return {
-          label:            MONTHS_SHORT[m],
-          year:             y,
-          month:            m,
-          totalFixedPaid:   m2.totalFixedPaid,
-          totalVariable:    m2.totalVariable,
-          available:        m2.available,
-          availableClamped: Math.max(0, m2.available),
-          totalIncome:      m2.totalIncome,
-        }
-      })
-    )
+  const history = useMemo(() => (loading ? [] : months.slice(1).map(({ year: y, month: m }, i) => {
+    const m2 = computeMetrics(data[i + 1])
+    return {
+      label:            MONTHS_SHORT[m],
+      year:             y,
+      month:            m,
+      totalFixedPaid:   m2.totalFixedPaid,
+      totalVariable:    m2.totalVariable,
+      available:        m2.available,
+      availableClamped: Math.max(0, m2.available),
+      totalIncome:      m2.totalIncome,
+    }
+  })), [loading, data, months])
 
-    setLoading(false)
-  }, [year, month])
-
-  useEffect(() => { load() }, [load])
-
-  return { metrics, history, loading, reload: load }
+  return { metrics, history, loading }
 }

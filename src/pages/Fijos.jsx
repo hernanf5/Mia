@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useRef, useState } from 'react'
-import { useTransactions } from '../hooks/useTransactions'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
 import TransactionModal from '../components/TransactionModal'
 import ConfirmModal from '../components/ConfirmModal'
 import { fmtARS } from '../lib/fmt'
-import { useData } from '../context/DataContext'
+import { useData, useMonthTransactions } from '../context/DataContext'
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
@@ -64,24 +63,15 @@ export default function Fijos() {
   const year   = target.getFullYear()
   const month  = target.getMonth()
 
-  const {createTransaction, updateTransaction, deleteTransaction } = useTransactions()
-  const { getTransactionsForMonth, invalidateMonth, updateTransactionInCache } = useData()
+  const { getTransactionsForMonth, createTransactions, deleteTransaction, toggleChecked } = useData()
   const { user } = useAuth()
-  const [fijos,      setFijos]      = useState([])
-  const [loading,    setLoading]    = useState(true)
+  const { data: monthTxns, loading } = useMonthTransactions(year, month)
+  const fijos = useMemo(() => monthTxns.filter(t => t.category?.type === 'fixed'), [monthTxns])
   const [copying,    setCopying]    = useState(false)
   const [expanded,   setExpanded]   = useState(null)
   const [txModal,    setTxModal]    = useState(false)   // false=closed | null=create | tx=edit
   const [confirmDel, setConfirmDel] = useState(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const data  = await getTransactionsForMonth(year, month)
-    setFijos((data ?? []).filter(t => t.category?.type === 'fixed'))
-    setLoading(false)
-  }, [year, month])
-
-  useEffect(() => { load() }, [load])
   useEffect(() => { setExpanded(null) }, [monthOff])
 
   async function copyFromPrevMonth() {
@@ -90,7 +80,7 @@ export default function Fijos() {
     const prevData = await getTransactionsForMonth(prevTarget.getFullYear(), prevTarget.getMonth())
     const prevFijos = (prevData ?? []).filter(t => t.category?.type === 'fixed')
     const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-01`
-    await Promise.all(prevFijos.map(f => createTransaction({
+    const { error } = await createTransactions(prevFijos.map(f => ({
       amount:         f.amount,
       description:    f.description,
       date:           dateStr,
@@ -101,22 +91,19 @@ export default function Fijos() {
       user_id:        user.id,
     })))
     setCopying(false)
-    invalidateMonth(year, month)
-    load()
+    if (error) window.alert(`No se pudieron copiar los fijos: ${error.message}`)
   }
 
+  // Optimista en el contexto, con rollback si Supabase falla
   async function toggle(tx) {
-    const next = !tx.is_checked
-    setFijos(prev => prev.map(f => f.id === tx.id ? { ...f, is_checked: next } : f))
-    await updateTransaction(tx.id, { is_checked: next })
-    updateTransactionInCache(year, month, { ...tx, is_checked: next })
+    const { error } = await toggleChecked(tx)
+    if (error) window.alert(`No se pudo actualizar: ${error.message}`)
   }
 
   async function handleDelete() {
-    await deleteTransaction(confirmDel.id)
+    const { error } = await deleteTransaction(confirmDel)
+    if (error) { window.alert(`No se pudo eliminar: ${error.message}`); return }
     setConfirmDel(null)
-    invalidateMonth(year, month)
-    load()
   }
 
   const paid    = fijos.filter(f => f.is_checked).reduce((s, f) => s + Math.abs(Number(f.amount)), 0)
@@ -261,7 +248,7 @@ export default function Fijos() {
       {txModal !== false && (
         <TransactionModal
           transaction={txModal}
-          onSave={() => { setTxModal(false); invalidateMonth(year, month); load() }}
+          onSave={() => setTxModal(false)}
           onClose={() => setTxModal(false)}
         />
       )}

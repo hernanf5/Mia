@@ -1,9 +1,9 @@
-import { useState, useCallback, useEffect } from 'react'
+import { useState, useMemo } from 'react'
 import {
   ArrowDownRight, ArrowUpRight, Wallet, Receipt,
   ShoppingBag, TrendingUp, Sparkles, Loader2,
 } from 'lucide-react'
-import { useData } from '../context/DataContext'
+import { useMonthsTransactions } from '../context/DataContext'
 import { computeMetrics } from '../lib/metrics'
 import { fmtARS } from '../lib/fmt'
 
@@ -142,33 +142,21 @@ const glassCard = {
 
 export default function Informe() {
   const [monthOff, setMonthOff] = useState(0)
-  const { getTransactionsForMonth } = useData()
   const now = new Date()
   const target = new Date(now.getFullYear(), now.getMonth() + monthOff, 1)
   const year = target.getFullYear()
   const month = target.getMonth()
-  const [metrics, setMetrics] = useState(null)
-  const [prevMetrics, setPrevMetrics] = useState(null)
-  const [loading, setLoading] = useState(true)
   const [advice, setAdvice] = useState([])
   const [loadingAdvice, setLoadingAdvice] = useState(false)
   const [adviceError, setAdviceError] = useState(null)
 
-  const load = useCallback(async () => {
-    setLoading(true)
-    const prevTarget = new Date(now.getFullYear(), now.getMonth() + monthOff - 1, 1)
-    const prevYear = prevTarget.getFullYear()
-    const prevMonth = prevTarget.getMonth()
-    const [current, prev] = await Promise.all([
-      getTransactionsForMonth(year, month),
-      getTransactionsForMonth(prevYear, prevMonth),
-    ])
-    setMetrics(computeMetrics(current ?? []))
-    setPrevMetrics(computeMetrics(prev ?? []))
-    setLoading(false)
+  const months = useMemo(() => {
+    const prev = new Date(year, month - 1, 1)
+    return [{ year, month }, { year: prev.getFullYear(), month: prev.getMonth() }]
   }, [year, month])
-
-  useEffect(() => { load() }, [load])
+  const { data: [current, prev], loading } = useMonthsTransactions(months)
+  const metrics     = useMemo(() => (loading ? null : computeMetrics(current ?? [])), [loading, current])
+  const prevMetrics = useMemo(() => (loading ? null : computeMetrics(prev ?? [])), [loading, prev])
 
   const fetchAdvice = async () => {
     setLoadingAdvice(true)
