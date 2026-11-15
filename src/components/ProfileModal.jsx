@@ -1,16 +1,19 @@
 import { useEffect, useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 import { useAuth } from '../context/AuthContext'
-import { useTheme } from '../context/ThemeContext'
+import { THEMES, useTheme } from '../context/ThemeContext'
 import { supabase } from '../lib/supabaseClient'
 
-const THEMES_META = {
-  aurora:   { label: 'Aurora',   dots: ['#10b981', '#22d3ee', '#2dd4bf'] },
-  obsidian: { label: 'Obsidian', dots: ['#2dd4bf', '#6366f1', '#2dd4bf'] },
-  nebula:   { label: 'Nebula',   dots: ['#a855f7', '#3b82f6', '#2dd4bf'] },
-}
+const ChevronIcon = () => (
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true">
+    <polyline points="9 18 15 12 9 6"/>
+  </svg>
+)
 
-export default function ProfileModal({ onClose, onSignOut }) {
-  const { user } = useAuth()
+// Perfil: Categorías · Tema · WhatsApp · Cerrar sesión (docs/rediseno-v2.md §3)
+export default function ProfileModal({ onClose }) {
+  const navigate = useNavigate()
+  const { user, signOut } = useAuth()
   const { theme, setTheme } = useTheme()
 
   const [waPhone, setWaPhone] = useState(null)
@@ -65,14 +68,23 @@ export default function ProfileModal({ onClose, onSignOut }) {
 
   const initial = user?.email?.[0]?.toUpperCase() ?? '?'
 
+  function goToCategories() {
+    onClose()
+    navigate('/categories')
+  }
+
+  async function handleSignOut() {
+    onClose()
+    await signOut()
+    navigate('/login')
+  }
+
   return (
     <div
       onClick={onClose}
       style={{
         position: 'fixed', inset: 0, zIndex: 200,
-        background: 'rgba(0,0,0,0.6)',
-        backdropFilter: 'blur(8px)',
-        WebkitBackdropFilter: 'blur(8px)',
+        background: 'var(--overlay)',
       }}
     >
       <div
@@ -82,11 +94,10 @@ export default function ProfileModal({ onClose, onSignOut }) {
           top: '50%',
           left: '50%',
           transform: 'translate(-50%, -50%)',
-          background: 'rgba(255,255,255,0.07)',
-          backdropFilter: 'blur(30px) saturate(150%)',
-          WebkitBackdropFilter: 'blur(30px) saturate(150%)',
-          border: '1px solid rgba(255,255,255,0.12)',
-          borderRadius: 26,
+          background: 'var(--surface)',
+          border: '1px solid var(--bd)',
+          boxShadow: 'var(--shadow)',
+          borderRadius: 20,
           padding: 28,
           maxWidth: 420,
           width: 'calc(100% - 32px)',
@@ -96,17 +107,18 @@ export default function ProfileModal({ onClose, onSignOut }) {
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <div style={{
               width: 52, height: 52, borderRadius: '50%',
-              background: 'linear-gradient(135deg,#22d3ee,#a855f7)',
+              background: 'var(--grd)', border: '1px solid var(--grb)',
               display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontSize: 20, fontWeight: 700, color: '#fff', flexShrink: 0,
+              fontSize: 20, fontWeight: 700, color: 'var(--gr)', flexShrink: 0,
             }}>{initial}</div>
-            <span style={{ color: 'var(--tx3)', fontSize: 13 }}>{user?.email}</span>
+            <span style={{ color: 'var(--tx2)', fontSize: 13 }}>{user?.email}</span>
           </div>
           <button
             onClick={onClose}
+            aria-label="Cerrar"
             style={{
               background: 'none', border: 'none', cursor: 'pointer',
-              color: 'var(--tx3)', padding: 4, fontSize: 20, lineHeight: 1,
+              color: 'var(--tx2)', width: 44, height: 44, margin: -10, fontSize: 20, lineHeight: 1,
               fontFamily: 'inherit',
             }}
           >✕</button>
@@ -114,29 +126,53 @@ export default function ProfileModal({ onClose, onSignOut }) {
 
         <div style={{ height: 1, background: 'var(--bd)', marginBottom: 20 }} />
 
-        <p className="slbl" style={{ marginBottom: 12 }}>Tema</p>
-        <div style={{ display: 'flex', gap: 8, marginBottom: 24 }}>
-          {Object.entries(THEMES_META).map(([key, meta]) => {
-            const active = theme === key
+        <button
+          type="button"
+          onClick={goToCategories}
+          style={{
+            width: '100%', minHeight: 48, padding: '0 14px', borderRadius: 14, marginBottom: 24,
+            background: 'var(--s2)', border: '1px solid var(--bd2)',
+            color: 'var(--tx)', fontSize: 14, fontWeight: 500,
+            cursor: 'pointer', fontFamily: 'inherit',
+            display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+          }}
+        >
+          Categorías
+          <span style={{ color: 'var(--tx2)', display: 'flex' }}><ChevronIcon /></span>
+        </button>
+
+        <p className="slbl" id="theme-label" style={{ marginBottom: 12 }}>Tema</p>
+        <div role="radiogroup" aria-labelledby="theme-label" style={{ display: 'grid', gridTemplateColumns: 'repeat(4, minmax(0, 1fr))', gap: 8, marginBottom: 24 }}>
+          {THEMES.map(({ id, label }) => {
+            const active = theme === id
             return (
               <button
-                key={key}
-                onClick={() => setTheme(key)}
+                key={id}
+                role="radio"
+                aria-checked={active}
+                onClick={() => setTheme(id)}
                 style={{
-                  flex: 1, padding: '10px 8px', borderRadius: 14,
+                  padding: 6, borderRadius: 14, minHeight: 44,
                   background: active ? 'var(--grd)' : 'var(--s2)',
-                  border: `1px solid ${active ? 'var(--gr)' : 'var(--bd2)'}`,
+                  border: `${active ? 2 : 1}px solid ${active ? 'var(--gr)' : 'var(--bd2)'}`,
                   cursor: 'pointer', fontFamily: 'inherit',
-                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 8,
+                  display: 'flex', flexDirection: 'column', alignItems: 'stretch', gap: 6,
                 }}
               >
-                <div style={{ display: 'flex', gap: 4 }}>
-                  {meta.dots.map((c, i) => (
-                    <div key={i} style={{ width: 10, height: 10, borderRadius: '50%', background: c }} />
-                  ))}
+                {/* Swatch: data-theme hace que var(--bg)/var(--gr) resuelvan a ese tema */}
+                <div
+                  data-theme={id}
+                  aria-hidden="true"
+                  style={{
+                    height: 36, borderRadius: 10,
+                    background: 'var(--bg)', border: '1px solid var(--bd2)',
+                    display: 'flex', alignItems: 'flex-end', justifyContent: 'flex-end', padding: 6,
+                  }}
+                >
+                  <span style={{ width: 14, height: 14, borderRadius: '50%', background: 'var(--gr)' }} />
                 </div>
                 <span style={{ fontSize: 11, fontWeight: 600, color: active ? 'var(--gr)' : 'var(--tx2)' }}>
-                  {meta.label}
+                  {label}
                 </span>
               </button>
             )
@@ -176,11 +212,11 @@ export default function ProfileModal({ onClose, onSignOut }) {
                 aria-label="Número de WhatsApp"
                 style={{
                   flex: 1, minWidth: 0, padding: '10px 12px', borderRadius: 12,
-                  background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)',
+                  background: 'var(--s2)', border: '1px solid var(--bd2)',
                   color: 'var(--tx)', fontSize: 13, outline: 'none', fontFamily: 'inherit',
                 }}
                 onFocus={e => e.target.style.setProperty('border-color', 'var(--gr)')}
-                onBlur={e => e.target.style.setProperty('border-color', 'rgba(255,255,255,0.10)')}
+                onBlur={e => e.target.style.setProperty('border-color', 'var(--bd2)')}
               />
               <button
                 onClick={handleLink}
@@ -188,7 +224,7 @@ export default function ProfileModal({ onClose, onSignOut }) {
                 style={{
                   padding: '10px 14px', borderRadius: 12,
                   background: 'var(--gr)', border: 'none',
-                  color: '#000', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
+                  color: 'var(--on-accent)', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
                 }}
               >
                 {waBusy ? '...' : 'Vincular'}
@@ -204,10 +240,10 @@ export default function ProfileModal({ onClose, onSignOut }) {
         )}
 
         <button
-          onClick={onSignOut}
+          onClick={handleSignOut}
           style={{
             width: '100%', padding: 10, borderRadius: 12,
-            background: 'rgba(248,113,113,0.08)', border: '1px solid rgba(248,113,113,0.2)',
+            background: 'var(--red)', border: '1px solid color-mix(in srgb, var(--re) 25%, transparent)',
             color: 'var(--re)', fontSize: 13, fontWeight: 500,
             cursor: 'pointer', fontFamily: 'inherit',
           }}

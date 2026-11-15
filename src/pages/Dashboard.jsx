@@ -1,61 +1,40 @@
-import { useState } from 'react'
-import {
-  PieChart, Pie, Cell,
-  BarChart, Bar, XAxis, Tooltip, ResponsiveContainer,
-} from 'recharts'
+import { useMemo, useState } from 'react'
+import { Link } from 'react-router-dom'
 import { useDashboard } from '../hooks/useDashboard'
 import { useAuth } from '../context/AuthContext'
-import TransactionModal from '../components/TransactionModal'
+import ProfileModal from '../components/ProfileModal'
+import { DashboardSkeleton } from '../components/Skeleton'
 import { fmtARS } from '../lib/fmt'
+import { typeByCategoryName } from '../lib/categoryTypes'
 import Logo from '../assets/mia.svg'
 
-const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+// Dashboard (docs/rediseno-v2.md §4)
+
+const MONTHS       = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
+const MONTHS_SHORT = ['ene','feb','mar','abr','may','jun','jul','ago','sep','oct','nov','dic']
 
 const ChevL = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
     <polyline points="15 18 9 12 15 6"/>
   </svg>
 )
 const ChevR = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
     <polyline points="9 18 15 12 9 6"/>
   </svg>
 )
-const PlusIcon = () => (
-  <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.4" strokeLinecap="round">
-    <line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/>
-  </svg>
-)
 
-function BarTooltip({ active, payload, label }) {
-  if (!active || !payload?.length) return null
-  const byName = Object.fromEntries(payload.map(p => [p.name, p]))
-  const fixed   = byName['Fijos']?.value   ?? 0
-  const varbl   = byName['Variables']?.value ?? 0
-  const avail   = byName['Disp.']?.value   ?? 0
-  const income  = fixed + varbl + avail
+const TYPE_COLOR = { fixed: 'var(--am)', variable: 'var(--pu)', income: 'var(--gr)' }
 
-  return (
-    <div style={{ background: 'var(--s1)', border: '1px solid var(--bd)', borderRadius: 8, padding: '8px 12px', fontSize: 12, minWidth: 140 }}>
-      <p style={{ color: 'var(--tx2)', marginBottom: 6, fontWeight: 600 }}>{label}</p>
-      {income > 0 && <p style={{ color: 'var(--gr)', margin: '2px 0'  }}>Ingresos: {fmtARS(income)}</p>}
-      <p style={{ color: '#f59e0b',  margin: '2px 0' }}>Fijos: {fmtARS(fixed)}</p>
-      <p style={{ color: '#7c5cfc',  margin: '2px 0' }}>Variables: {fmtARS(varbl)}</p>
-      <p style={{ color: 'var(--gr)', margin: '2px 0' }}>Disp.: {fmtARS(avail)}</p>
-    </div>
-  )
-}
-
-function glassColor(hex) {
-  const r = parseInt(hex.slice(1,3), 16)
-  const g = parseInt(hex.slice(3,5), 16)
-  const b = parseInt(hex.slice(5,7), 16)
-  return `rgba(${r},${g},${b},0.75)`
+// 'YYYY-MM-DD' → '12 nov' (sin pasar por Date para no correr el día por zona horaria)
+function fmtDay(date) {
+  const [, m, d] = String(date).split('-').map(Number)
+  return `${d} ${MONTHS_SHORT[m - 1]}`
 }
 
 export default function Dashboard() {
-  const [monthOff, setMonthOff]     = useState(0)
-  const [showTxModal, setShowTxModal] = useState(false)
+  const [monthOff, setMonthOff]       = useState(0)
+  const [showProfile, setShowProfile] = useState(false)
   const { user } = useAuth()
   const initial = user?.email?.[0]?.toUpperCase() ?? '?'
 
@@ -64,180 +43,270 @@ export default function Dashboard() {
   const year   = target.getFullYear()
   const month  = target.getMonth()
 
-  const { metrics, history, loading } = useDashboard({ year, month })
-
-  const totalIncome    = metrics?.totalIncome    ?? 0
-  const totalFixedPaid = metrics?.totalFixedPaid ?? 0
-  const totalVariable  = metrics?.totalVariable  ?? 0
-  const available      = metrics?.available      ?? 0
-  const byCategory     = metrics?.byCategory     ?? []
-  const totalSpent     = totalFixedPaid + totalVariable
-
-  const fixedPct = totalIncome > 0 ? Math.min(totalFixedPaid / totalIncome * 100, 100)                         : 0
-  const varPct   = totalIncome > 0 ? Math.min(totalVariable  / totalIncome * 100, Math.max(0, 100 - fixedPct)) : 0
-
-  // El contexto ya actualizó el caché con el registro guardado
-  function handleTxSave() {
-    setShowTxModal(false)
-  }
+  const { metrics, transactions, loading } = useDashboard({ year, month })
 
   return (
     <div className="screen">
       {/* ── Header ── */}
       <div style={{ padding: '6px 16px 0' }}>
-        {/* Logo + avatar: solo visible en mobile (sidebar lo muestra en desktop) */}
-        <div className="hide-on-desktop" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+        {/* Wordmark + avatar: solo mobile (el Sidebar los muestra en desktop) */}
+        <div className="hide-on-desktop" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
           <img src={Logo} alt="Mia" style={{ height: 28, width: 'auto', display: 'block' }} />
-          <div style={{ width: 32, height: 32, borderRadius: '50%', background: 'var(--s2)', border: '1px solid var(--bd2)', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, color: '#888', fontWeight: 600 }}>{initial}</div>
+          {/* Avatar → ProfileModal (Categorías, Tema, WhatsApp, Cerrar sesión). Área táctil 44px */}
+          <button type="button" onClick={() => setShowProfile(true)} aria-label="Abrir perfil y configuración" style={s.avatarBtn}>
+            <span style={s.avatar}>{initial}</span>
+          </button>
         </div>
 
-        {/* Month nav */}
-        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-          <button onClick={() => setMonthOff(o => o - 1)} style={s.navBtn} aria-label="Mes anterior"><ChevL /></button>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#bbb' }}>{MONTHS[month]} {year}</span>
-          <button onClick={() => setMonthOff(o => Math.min(o + 1, 0))} style={{ ...s.navBtn, opacity: monthOff === 0 ? .3 : 1 }} aria-label="Mes siguiente" aria-disabled={monthOff === 0}>
+        {/* Selector de mes */}
+        <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 16 }}>
+          <button type="button" onClick={() => setMonthOff(o => o - 1)} style={s.navBtn} aria-label="Mes anterior"><ChevL /></button>
+          <h1 style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx)' }} aria-live="polite">{MONTHS[month]} {year}</h1>
+          <button
+            type="button"
+            onClick={() => setMonthOff(o => Math.min(o + 1, 0))}
+            style={{ ...s.navBtn, opacity: monthOff === 0 ? .35 : 1, cursor: monthOff === 0 ? 'default' : 'pointer' }}
+            aria-label="Mes siguiente"
+            aria-disabled={monthOff === 0}
+          >
             <ChevR />
           </button>
         </div>
       </div>
 
-      {/* ── Cards: 2-col on desktop, single col on mobile ── */}
       <div style={{ padding: '0 16px 12px' }}>
-        <div className="dash-layout">
-
-          {/* Left column */}
-          <div className="dash-left">
-            {/* Summary card */}
-            <div className="card" style={{ padding: 16 }}>
-              <div className="slbl" style={{ marginBottom: 4 }}>Saldo disponible</div>
-              <div className="mono" style={{ fontSize: 32, fontWeight: 700, color: loading ? 'var(--tx)' : available >= 0 ? 'var(--gr)' : 'var(--re)', lineHeight: 1.1, marginBottom: 2 }}>
-                {loading ? '—' : fmtARS(available)}
-              </div>
-              <div style={{ fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>
-                {!loading && `de ${fmtARS(totalIncome)} de ingresos`}
-              </div>
-
-              <div style={{ height: 8, background: 'var(--s3)', borderRadius: 4, overflow: 'hidden', marginTop: 10, display: 'flex' }}>
-                <div style={{ width: `${fixedPct.toFixed(1)}%`, background: '#f59e0b', transition: 'width .5s' }} />
-                <div style={{ width: `${varPct.toFixed(1)}%`,  background: '#7c5cfc', transition: 'width .5s' }} />
-              </div>
-              <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 4 }}>
-                <span style={{ fontSize: 10, color: '#f59e0b' }}>{fixedPct.toFixed(0)}% fijos</span>
-                <span style={{ fontSize: 10, color: '#7c5cfc' }}>{varPct.toFixed(0)}% variables</span>
-              </div>
-
-              <div style={{ display: 'flex', gap: 6, marginTop: 12, flexWrap: 'wrap' }}>
-                <div style={{ ...s.chip, color: '#f59e0b', borderColor: 'rgba(245,158,11,.25)', background: 'rgba(245,158,11,.08)' }}>
-                  Fijos {fmtARS(totalFixedPaid)}
-                </div>
-                <div style={{ ...s.chip, color: '#7c5cfc', borderColor: 'rgba(124,92,252,.25)', background: 'var(--pud)' }}>
-                  Variables {fmtARS(totalVariable)}
-                </div>
-                <div style={{ ...s.chip, color: available >= 0 ? 'var(--gr)' : 'var(--re)', borderColor: available >= 0 ? 'var(--grb)' : 'rgba(244,63,94,.25)', background: available >= 0 ? 'var(--grd)' : 'var(--red)' }}>
-                  Disponible {fmtARS(available)}
-                </div>
-              </div>
-            </div>
-
-            {/* Donut chart */}
-            {!loading && (
-              byCategory.length > 0 ? (
-                <div className="card" style={{ padding: 16 }}>
-                  <div className="slbl" style={{ marginBottom: 12 }}>Por categoría</div>
-                  <div style={{ position: 'relative', width: 160, height: 160, margin: '0 auto' }}>
-                    <PieChart width={160} height={160} style={{ filter: 'saturate(1.2) brightness(1.1)' }}>
-                      <Pie data={byCategory} cx={80} cy={80} innerRadius={52} outerRadius={72} paddingAngle={3} dataKey="amount" isAnimationActive stroke="rgba(255,255,255,0.15)" strokeWidth={1.5}>
-                        {byCategory.map((entry, i) => <Cell key={i} fill={glassColor(entry.color)} />)}
-                      </Pie>
-                    </PieChart>
-                    <div style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', pointerEvents: 'none' }}>
-                      <span style={{ fontSize: 10, color: 'var(--tx2)', letterSpacing: '.04em', textTransform: 'uppercase' }}>Gastos</span>
-                      <span className="mono" style={{ fontSize: 14, fontWeight: 700, color: 'var(--tx)' }}>{fmtARS(totalSpent)}</span>
-                    </div>
-                  </div>
-                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px 16px', marginTop: 14 }}>
-                    {byCategory.map(({ name, color, amount }) => (
-                      <div key={name} style={{ display: 'flex', alignItems: 'center', gap: 6, minWidth: 0 }}>
-                        <div style={{ width: 7, height: 7, borderRadius: '50%', background: color, flexShrink: 0 }} />
-                        <span style={{ fontSize: 11, color: 'var(--tx2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{name}</span>
-                        <span className="mono" style={{ fontSize: 11, color: 'var(--tx)', fontWeight: 600, flexShrink: 0 }}>{fmtARS(amount)}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ) : (
-                <div className="card" style={{ padding: '24px 16px', textAlign: 'center' }}>
-                  <p style={{ color: 'var(--tx3)', fontSize: 13 }}>Sin gastos este mes</p>
-                </div>
-              )
-            )}
-          </div>
-
-          {/* Right column: bar chart */}
-          <div className="dash-right">
-            {history.length > 0 && (
-              <div className="card" style={{ padding: 16 }}>
-                <div className="slbl" style={{ marginBottom: 4 }}>Últimos meses</div>
-                <div style={{ display: 'flex', gap: 12, marginBottom: 10 }}>
-                  {[['#f59e0b','Fijos'],['#7c5cfc','Variables'],['#10b981','Disp.']].map(([c,l]) => (
-                    <div key={l} style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-                      <div style={{ width: 8, height: 8, borderRadius: 2, background: c }} />
-                      <span style={{ fontSize: 10, color: 'var(--tx2)' }}>{l}</span>
-                    </div>
-                  ))}
-                </div>
-                <ResponsiveContainer width="100%" height={160}>
-                  <BarChart data={history} barSize={28} margin={{ top: 4, right: 0, bottom: 0, left: 0 }}>
-                    <XAxis dataKey="label" tick={{ fill: 'var(--tx2)', fontSize: 11, fontFamily: 'Inter, sans-serif' }} axisLine={false} tickLine={false} />
-                    <Tooltip content={<BarTooltip />} cursor={{ fill: 'rgba(255,255,255,0.03)' }} />
-                    <Bar dataKey="totalFixedPaid"   name="Fijos"     stackId="a" fill="#f59e0b" isAnimationActive />
-                    <Bar dataKey="totalVariable"    name="Variables" stackId="a" fill="#7c5cfc" isAnimationActive />
-                    <Bar dataKey="availableClamped" name="Disp."     stackId="a" fill="#10b981" radius={[4,4,0,0]} isAnimationActive />
-                  </BarChart>
-                </ResponsiveContainer>
-              </div>
-            )}
-          </div>
-
-        </div>
+        {loading
+          ? <DashboardSkeleton />
+          : <DashboardContent metrics={metrics} transactions={transactions} />}
       </div>
 
-      {/* ── FAB ── */}
-      <button style={s.fab} className="fab-r" onClick={() => setShowTxModal(true)} aria-label="Nueva transacción">
-        <PlusIcon />
-      </button>
-
-      {/* ── Transaction modal ── */}
-      {showTxModal && (
-        <TransactionModal
-          onSave={handleTxSave}
-          onClose={() => setShowTxModal(false)}
-        />
-      )}
+      {showProfile && <ProfileModal onClose={() => setShowProfile(false)} />}
     </div>
   )
 }
 
+function DashboardContent({ metrics, transactions }) {
+  const { totalIncome, totalFixedPaid, totalFixedPending, totalVariable, available, byCategory } = metrics
+
+  // byCategory no trae el tipo: se deriva de las transacciones (ver lib/categoryTypes)
+  const typeByName = useMemo(() => typeByCategoryName(transactions), [transactions])
+
+  const pendingCount = useMemo(
+    () => transactions.filter(t => t.category?.type === 'fixed' && !t.is_checked).length,
+    [transactions]
+  )
+
+  // Igual que Transactions: un fijo sin pagar todavía no es un movimiento
+  const latest = useMemo(
+    () => transactions.filter(t => !(t.category?.type === 'fixed' && !t.is_checked)).slice(0, 4),
+    [transactions]
+  )
+
+  return (
+    <div className="dash-layout">
+      <div className="dash-left">
+        <SummaryCard
+          totalIncome={totalIncome}
+          totalFixedPaid={totalFixedPaid}
+          totalVariable={totalVariable}
+          available={available}
+        />
+        {totalFixedPending > 0 && <PendingFixedNotice count={pendingCount} amount={totalFixedPending} />}
+        <WhereItWent byCategory={byCategory} typeByName={typeByName} />
+      </div>
+
+      <div className="dash-right">
+        <LatestMovements items={latest} />
+      </div>
+    </div>
+  )
+}
+
+// ── Card principal ──
+function SummaryCard({ totalIncome, totalFixedPaid, totalVariable, available }) {
+  // Proporciones sobre ingresos; si se gastó más de lo que entró, fijos+variables llenan la barra
+  const base     = Math.max(totalIncome, totalFixedPaid + totalVariable)
+  const fixedPct = base > 0 ? (totalFixedPaid / base) * 100 : 0
+  const varPct   = base > 0 ? (totalVariable / base) * 100 : 0
+  const freePct  = base > 0 ? Math.max(0, 100 - fixedPct - varPct) : 0
+  const freeOfIncome = totalIncome > 0 ? Math.round((available / totalIncome) * 100) : 0
+  const positive = available >= 0
+
+  const segments = [
+    { key: 'fijos',     pct: fixedPct, color: 'var(--am)' },
+    { key: 'variables', pct: varPct,   color: 'var(--pu)' },
+    { key: 'libre',     pct: freePct,  color: 'var(--gr)' },
+  ].filter(seg => seg.pct > 0)
+
+  return (
+    <section className="card" style={{ padding: 20 }} aria-labelledby="dash-available">
+      <div id="dash-available" style={s.label}>Disponible</div>
+      <div className="mono" style={{ fontSize: 42, fontWeight: 700, lineHeight: 1.1, margin: '6px 0 4px', color: positive ? 'var(--gr)' : 'var(--re)' }}>
+        {fmtARS(available)}
+      </div>
+      <div style={{ fontSize: 13, color: 'var(--tx2)' }}>
+        de {fmtARS(totalIncome)} de ingresos
+      </div>
+
+      {/* Barra segmentada: fijos · variables · libre */}
+      <div
+        role="img"
+        aria-label={`Fijos ${Math.round(fixedPct)}%, variables ${Math.round(varPct)}%, libre ${Math.round(freePct)}%`}
+        style={{ display: 'flex', gap: 2, height: 10, borderRadius: 5, overflow: 'hidden', background: 'var(--s3)', margin: '18px 0 16px' }}
+      >
+        {segments.map(seg => (
+          <div key={seg.key} style={{ flex: `${seg.pct} 1 0`, background: seg.color, transition: 'flex-grow .5s' }} />
+        ))}
+      </div>
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 12 }}>
+        <Stat label="Fijos"     color="var(--am)" value={fmtARS(totalFixedPaid)} />
+        <Stat label="Variables" color="var(--pu)" value={fmtARS(totalVariable)} />
+        <Stat label="Libre"     color={positive ? 'var(--gr)' : 'var(--re)'} value={`${freeOfIncome}%`} />
+      </div>
+    </section>
+  )
+}
+
+function Stat({ label, color, value }) {
+  return (
+    <div style={{ minWidth: 0 }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 6, fontSize: 12, color: 'var(--tx2)', marginBottom: 4 }}>
+        <span style={{ width: 8, height: 8, borderRadius: 2, background: color, flexShrink: 0 }} aria-hidden="true" />
+        {label}
+      </div>
+      <div className="mono" style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+        {value}
+      </div>
+    </div>
+  )
+}
+
+// ── Aviso de fijos pendientes ──
+function PendingFixedNotice({ count, amount }) {
+  return (
+    <Link to="/fijos" style={s.notice}>
+      <span style={{ width: 8, height: 8, borderRadius: '50%', background: 'var(--am)', flexShrink: 0 }} aria-hidden="true" />
+      <span style={{ flex: 1, minWidth: 0 }}>
+        <span style={{ display: 'block', fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>
+          {count} {count === 1 ? 'fijo por pagar' : 'fijos por pagar'}
+        </span>
+        <span style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 2 }}>
+          <span className="mono">{fmtARS(amount)}</span> todavía no descontados
+        </span>
+      </span>
+      <span style={{ color: 'var(--am)', display: 'flex' }}><ChevR /></span>
+    </Link>
+  )
+}
+
+// ── En qué se fue ──
+function WhereItWent({ byCategory, typeByName }) {
+  const max = byCategory[0]?.amount ?? 0   // byCategory viene ordenado desc
+
+  return (
+    <section className="card" style={{ padding: 20 }} aria-labelledby="dash-where">
+      <h2 id="dash-where" style={{ ...s.label, marginBottom: 16 }}>En qué se fue</h2>
+
+      {byCategory.length === 0 ? (
+        <p style={{ fontSize: 13, color: 'var(--tx2)' }}>Sin gastos este mes.</p>
+      ) : (
+        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {byCategory.map(({ name, amount }) => {
+            const isFixed = typeByName[name] === 'fixed'
+            const color   = isFixed ? 'var(--am)' : 'var(--pu)'
+            const pct     = max > 0 ? (amount / max) * 100 : 0
+            return (
+              <li key={name}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {name}
+                    {isFixed && <span style={{ color: 'var(--tx2)' }}> · fijo</span>}
+                  </span>
+                  <span className="mono" style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', flexShrink: 0 }}>{fmtARS(amount)}</span>
+                </div>
+                <div style={{ height: 6, borderRadius: 3, background: 'var(--s3)', overflow: 'hidden' }}>
+                  <div style={{ width: `${pct}%`, height: '100%', borderRadius: 3, background: color, transition: 'width .5s cubic-bezier(.4,0,.2,1)' }} />
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+// ── Últimos movimientos ──
+function LatestMovements({ items }) {
+  return (
+    <section className="card" style={{ padding: 20 }} aria-labelledby="dash-latest">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 4 }}>
+        <h2 id="dash-latest" style={s.label}>Últimos movimientos</h2>
+        <Link to="/transactions" style={s.seeAll}>Ver todos</Link>
+      </div>
+
+      {items.length === 0 ? (
+        <p style={{ fontSize: 13, color: 'var(--tx2)', padding: '8px 0' }}>Todavía no cargaste movimientos este mes.</p>
+      ) : (
+        <ul style={{ listStyle: 'none' }}>
+          {items.map((tx, i) => {
+            const type     = tx.category?.type
+            const isIncome = type === 'income'
+            const color    = TYPE_COLOR[type] ?? 'var(--tx3)'
+            return (
+              <li key={tx.id} style={{ display: 'flex', alignItems: 'center', gap: 12, padding: '10px 0', borderTop: i === 0 ? 'none' : '1px solid var(--bd)' }}>
+                <span style={{ width: 36, height: 36, borderRadius: 12, background: `color-mix(in srgb, ${color} 13%, transparent)`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }} aria-hidden="true">
+                  <span style={{ width: 8, height: 8, borderRadius: '50%', background: color }} />
+                </span>
+                <span style={{ flex: 1, minWidth: 0 }}>
+                  <span style={{ display: 'block', fontSize: 14, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {tx.description || tx.category?.name || 'Sin descripción'}
+                  </span>
+                  <span style={{ display: 'block', fontSize: 12, color: 'var(--tx2)', marginTop: 2 }}>
+                    {tx.category?.name ?? 'Sin categoría'} · {fmtDay(tx.date)}
+                  </span>
+                </span>
+                <span className="mono" style={{ fontSize: 14, fontWeight: 600, color: isIncome ? 'var(--gr)' : 'var(--tx)', flexShrink: 0 }}>
+                  {isIncome ? '+' : '−'}{fmtARS(Math.abs(Number(tx.amount)))}
+                </span>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
+  )
+}
+
 const s = {
+  label: { fontSize: 12, fontWeight: 600, color: 'var(--tx2)' },
   navBtn: {
-    width: 40, height: 40, borderRadius: 10,
+    width: 44, height: 44, borderRadius: 14,
     background: 'var(--s2)', border: '1px solid var(--bd2)',
     cursor: 'pointer', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', color: '#666',
+    justifyContent: 'center', color: 'var(--tx2)',
   },
-  chip: {
-    display: 'inline-flex', alignItems: 'center',
-    padding: '4px 10px', borderRadius: 20,
-    fontSize: 11, fontWeight: 500,
-    border: '1px solid', whiteSpace: 'nowrap',
+  avatarBtn: {
+    width: 44, height: 44, margin: -6, padding: 0,
+    background: 'none', border: 'none', cursor: 'pointer',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
   },
-  fab: {
-    position: 'fixed', bottom: 76,
-    width: 48, height: 48, borderRadius: '50%',
-    background: 'var(--gr)', border: 'none',
-    cursor: 'pointer', display: 'flex',
-    alignItems: 'center', justifyContent: 'center',
-    color: '#000', boxShadow: '0 4px 20px rgba(16,185,129,0.35)',
-    zIndex: 90,
+  avatar: {
+    width: 32, height: 32, borderRadius: '50%',
+    background: 'var(--s2)', border: '1px solid var(--bd2)',
+    display: 'flex', alignItems: 'center', justifyContent: 'center',
+    fontSize: 13, color: 'var(--tx2)', fontWeight: 600, fontFamily: 'inherit',
+  },
+  notice: {
+    display: 'flex', alignItems: 'center', gap: 12,
+    minHeight: 44, padding: '14px 16px', borderRadius: 20,
+    background: 'var(--amd)',
+    border: '1px solid color-mix(in srgb, var(--am) 28%, transparent)',
+    textDecoration: 'none',
+  },
+  seeAll: {
+    minHeight: 44, display: 'flex', alignItems: 'center', padding: '0 4px',
+    fontSize: 13, fontWeight: 600, color: 'var(--gr)', textDecoration: 'none',
   },
 }

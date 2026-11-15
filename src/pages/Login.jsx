@@ -93,7 +93,7 @@ export default function Login() {
                 transition: 'all .15s',
                 background: mode === m ? 'var(--s1)' : 'transparent',
                 color:      mode === m ? 'var(--tx)' : 'var(--tx3)',
-                boxShadow:  mode === m ? '0 1px 4px rgba(0,0,0,.4)' : 'none',
+                boxShadow:  mode === m ? '0 1px 4px var(--overlay)' : 'none',
               }}
             >
               {m === 'login' ? 'Iniciar sesión' : 'Registrarse'}
@@ -230,7 +230,7 @@ const s = {
   },
   errorBanner: {
     background: 'var(--red)',
-    border: '1px solid rgba(244,63,94,.25)',
+    border: '1px solid color-mix(in srgb, var(--re) 25%, transparent)',
     borderRadius: 8,
     padding: '0.6rem 0.8rem',
     color: 'var(--re)',
@@ -239,7 +239,7 @@ const s = {
   },
   btnPrimary: {
     background: 'var(--gr)',
-    color: '#000',
+    color: 'var(--on-accent)',
     border: 'none',
     borderRadius: 8,
     padding: '0.7rem',

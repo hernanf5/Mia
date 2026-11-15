@@ -133,7 +133,7 @@ export default function Fijos() {
           </div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <button onClick={() => setMonthOff(o => o - 1)} style={s.navBtn} aria-label="Mes anterior"><ChevL /></button>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#bbb' }}>{MONTHS[month]} {year}</span>
+            <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>{MONTHS[month]} {year}</span>
             <button
               onClick={() => setMonthOff(o => Math.min(o + 1, 0))}
               style={{ ...s.navBtn, opacity: monthOff === 0 ? .3 : 1 }}
@@ -176,28 +176,28 @@ export default function Fijos() {
                     >
                       {fi.is_checked && <CheckIcon />}
                     </button>
-                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: fi.category?.color ?? '#555', flexShrink: 0 }} />
+                    <div style={{ width: 8, height: 8, borderRadius: '50%', background: fi.category?.color ?? 'var(--tx3)', flexShrink: 0 }} />
                     <div style={{ flex: 1, minWidth: 0 }}>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-                        <span style={{ fontSize: 13, fontWeight: 500, color: fi.is_checked ? '#444' : '#e0e0e0', textDecoration: fi.is_checked ? 'line-through' : 'none', transition: 'all .2s', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: 13, fontWeight: 500, color: fi.is_checked ? 'var(--tx3)' : 'var(--tx)', textDecoration: fi.is_checked ? 'line-through' : 'none', transition: 'all .2s', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {fi.description}
                         </span>
                         {fi.observations && <div className="note-dot" />}
                       </div>
-                      <span style={{ fontSize: 11, color: '#555' }}>
+                      <span style={{ fontSize: 11, color: 'var(--tx2)' }}>
                         {fi.category?.name}
                         {fi.subcategory?.name ? ` · ${fi.subcategory.name}` : ''}
                       </span>
                     </div>
-                    <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: fi.is_checked ? 'var(--tx3)' : '#ccc', flexShrink: 0, transition: 'color .2s' }}>
+                    <span className="mono" style={{ fontSize: 13, fontWeight: 600, color: fi.is_checked ? 'var(--tx3)' : 'var(--tx)', flexShrink: 0, transition: 'color .2s' }}>
                       {fmtARS(Math.abs(fi.amount))}
                     </span>
                   </div>
 
                   {isOpen && (
-                    <div style={{ padding: '10px 14px 12px', background: 'rgba(0,0,0,.2)' }}>
+                    <div style={{ padding: '10px 14px 12px', background: 'var(--s2)' }}>
                       {fi.observations && (
-                        <div style={{ background: '#141414', borderRadius: 8, padding: '7px 10px', borderLeft: '2px solid var(--am)', fontSize: 12, color: '#888', lineHeight: 1.5, marginBottom: 10 }}>
+                        <div style={{ background: 'var(--s3)', borderRadius: 8, padding: '7px 10px', borderLeft: '2px solid var(--am)', fontSize: 12, color: 'var(--tx2)', lineHeight: 1.5, marginBottom: 10 }}>
                           {fi.observations}
                         </div>
                       )}
@@ -205,7 +205,7 @@ export default function Fijos() {
                         <button style={s.actionBtn} onClick={() => { setTxModal(fi); setExpanded(null) }}>
                           <EditIcon /> Editar
                         </button>
-                        <button style={{ ...s.actionBtn, color: 'var(--re)', borderColor: 'rgba(244,63,94,.2)', background: 'var(--red)' }} onClick={() => setConfirmDel(fi)}>
+                        <button style={{ ...s.actionBtn, color: 'var(--re)', borderColor: 'color-mix(in srgb, var(--re) 20%, transparent)', background: 'var(--red)' }} onClick={() => setConfirmDel(fi)}>
                           <TrashIcon /> Eliminar
                         </button>
                       </div>
@@ -241,8 +241,8 @@ export default function Fijos() {
         </div>
       </div>
 
-      {/* Nav spacer — BottomNav is position:absolute and overlaps this */}
-      <div style={{ height: 60, flexShrink: 0 }} />
+      {/* Espacio para la navbar flotante (mobile); 0 en desktop */}
+      <div className="nav-spacer" />
 
       {/* Modals */}
       {txModal !== false && (
@@ -269,7 +269,7 @@ const s = {
     width: 40, height: 40, borderRadius: 10,
     background: 'var(--s2)', border: '1px solid var(--bd2)',
     cursor: 'pointer', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', color: '#666',
+    justifyContent: 'center', color: 'var(--tx2)',
   },
   actionBtn: {
     display: 'flex', alignItems: 'center', gap: 5,

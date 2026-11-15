@@ -19,8 +19,8 @@ function ThemeGate({ children }) {
   const { loadingTheme } = useTheme()
   if (loadingTheme) {
     return (
-      <div style={{ position: 'fixed', inset: 0, background: '#05100d', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTop: '2px solid #2ee6a8', animation: 'spin 0.8s linear infinite' }} />
+      <div style={{ position: 'fixed', inset: 0, background: 'var(--bg)', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+        <div style={{ width: 40, height: 40, borderRadius: '50%', border: '2px solid var(--bd2)', borderTop: '2px solid var(--gr)', animation: 'spin 0.8s linear infinite' }} />
       </div>
     )
   }

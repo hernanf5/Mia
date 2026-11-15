@@ -53,13 +53,13 @@ export default function SubcategoryModal({ subcategory, categoryName, onSave, on
 
 const s = {
   overlay: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.7)',
+    position: 'fixed', inset: 0, background: 'var(--overlay)',
     display: 'flex', alignItems: 'flex-end', justifyContent: 'center', zIndex: 200,
   },
   modal: {
     background: 'var(--s1)', borderRadius: '16px 16px 0 0',
     width: '100%', maxWidth: '430px',
-    boxShadow: '0 -4px 32px rgba(0,0,0,0.6)',
+    boxShadow: 'var(--shadow)',
     maxHeight: '90vh', overflowY: 'auto',
     paddingBottom: '80px',
   },
@@ -83,7 +83,7 @@ const s = {
     marginTop: '0.75rem',
   },
   btnPrimary: {
-    flex: 1, padding: '0.65rem', background: 'var(--gr)', color: '#000',
+    flex: 1, padding: '0.65rem', background: 'var(--gr)', color: 'var(--on-accent)',
     border: 'none', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
   btnSecondary: {

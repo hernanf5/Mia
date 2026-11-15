@@ -139,7 +139,7 @@ export default function Transactions() {
         {/* Month nav */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 12 }}>
           <button onClick={() => setMonthOff(o => o - 1)} style={s.navBtn} aria-label="Mes anterior"><ChevL /></button>
-          <span style={{ fontSize: 14, fontWeight: 600, color: '#bbb' }}>{MONTHS[month]} {year}</span>
+          <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>{MONTHS[month]} {year}</span>
           <button
             onClick={() => setMonthOff(o => Math.min(o + 1, 0))}
             style={{ ...s.navBtn, opacity: monthOff === 0 ? .3 : 1 }}
@@ -157,7 +157,7 @@ export default function Transactions() {
             onToggle={toggleCat}
             renderOption={opt => (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: opt.color ?? '#555', flexShrink: 0 }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: opt.color ?? 'var(--tx3)', flexShrink: 0 }} />
                 <span style={{ fontSize: 13, color: 'var(--tx)', fontWeight: 500 }}>{opt.name}</span>
               </div>
             )}
@@ -208,11 +208,11 @@ export default function Transactions() {
                         onClick={() => setExpanded(isOpen ? null : tx.id)}
                       >
                         <div style={{ width: 38, height: 38, borderRadius: 11, background: 'var(--s2)', border: '1px solid var(--bd)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: tx.category?.color ?? '#555' }} />
+                          <div style={{ width: 10, height: 10, borderRadius: '50%', background: tx.category?.color ?? 'var(--tx3)' }} />
                         </div>
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={{ display: 'flex', alignItems: 'center', gap: 5 }}>
-                            <span style={{ fontSize: 13, fontWeight: 500, color: '#e0e0e0', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                            <span style={{ fontSize: 13, fontWeight: 500, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {tx.description}
                             </span>
                             {tx.observations && <div className="note-dot" />}
@@ -230,15 +230,13 @@ export default function Transactions() {
                       {isOpen && (
                         <div style={{
                           padding: '12px 16px 14px',
-                          background: 'rgba(255,255,255,0.04)',
-                          backdropFilter: 'blur(22px) saturate(140%)',
-                          WebkitBackdropFilter: 'blur(22px) saturate(140%)',
-                          border: '1px solid rgba(255,255,255,0.08)',
-                          borderRadius: 18,
+                          background: 'var(--surface)',
+                          border: '1px solid var(--bd)',
+                          borderRadius: 20,
                           marginBottom: 8,
                         }}>
                           {tx.observations && (
-                            <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', borderRadius: 8, padding: '8px 10px', background: 'rgba(245,158,11,.05)', fontSize: 12, color: 'var(--tx2)', lineHeight: 1.5, marginBottom: 10 }}>
+                            <div style={{ display: 'flex', gap: 7, alignItems: 'flex-start', borderRadius: 8, padding: '8px 10px', background: 'var(--amd)', fontSize: 12, color: 'var(--tx2)', lineHeight: 1.5, marginBottom: 10 }}>
                               <div style={{ width: 5, height: 5, borderRadius: '50%', background: 'var(--am)', flexShrink: 0, marginTop: '0.35em' }} />
                               <span>{tx.observations}</span>
                             </div>
@@ -247,7 +245,7 @@ export default function Transactions() {
                             <button style={s.actionBtn} onClick={() => { setTxModal(tx); setExpanded(null) }}>
                               <EditIcon /> Editar
                             </button>
-                            <button style={{ ...s.actionBtn, color: 'var(--re)', borderColor: 'rgba(244,63,94,.2)', background: 'var(--red)' }} onClick={() => setConfirmDel(tx)}>
+                            <button style={{ ...s.actionBtn, color: 'var(--re)', borderColor: 'color-mix(in srgb, var(--re) 20%, transparent)', background: 'var(--red)' }} onClick={() => setConfirmDel(tx)}>
                               <TrashIcon /> Eliminar
                             </button>
                           </div>
@@ -292,11 +290,11 @@ const s = {
     width: 40, height: 40, borderRadius: 10,
     background: 'var(--s2)', border: '1px solid var(--bd2)',
     cursor: 'pointer', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', color: '#666',
+    justifyContent: 'center', color: 'var(--tx2)',
   },
   clearBtn: {
     padding: '7px 12px', borderRadius: 10,
-    background: 'var(--red)', border: '1px solid rgba(244,63,94,.2)',
+    background: 'var(--red)', border: '1px solid color-mix(in srgb, var(--re) 20%, transparent)',
     color: 'var(--re)', fontSize: 12, fontWeight: 500,
     cursor: 'pointer', fontFamily: 'inherit', whiteSpace: 'nowrap',
   },
@@ -307,11 +305,11 @@ const s = {
     color: 'var(--tx2)', fontSize: 12, cursor: 'pointer', fontFamily: 'inherit',
   },
   fab: {
-    position: 'fixed', bottom: 76,
+    position: 'fixed',
     width: 48, height: 48, borderRadius: '50%',
     background: 'var(--gr)', border: 'none',
     cursor: 'pointer', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', color: '#000',
-    boxShadow: '0 4px 20px rgba(16,185,129,0.35)', zIndex: 90,
+    justifyContent: 'center', color: 'var(--on-accent)',
+    boxShadow: 'var(--shadow)', zIndex: 90,
   },
 }

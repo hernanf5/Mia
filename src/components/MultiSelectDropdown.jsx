@@ -43,11 +43,11 @@ export default function MultiSelectDropdown({ label, options, selected, onToggle
       {open && (
         <div style={{
           position: 'absolute', top: 'calc(100% + 6px)', left: 0,
-          background: '#1a1a1a', border: '1px solid #3f3f46',
+          background: 'var(--surface)', border: '1px solid var(--bd2)',
           borderRadius: 12, padding: '6px 0',
           minWidth: 210, maxWidth: 290,
           maxHeight: 280, overflowY: 'auto',
-          zIndex: 300, boxShadow: '0 8px 32px rgba(0,0,0,0.6)',
+          zIndex: 300, boxShadow: 'var(--shadow)',
           scrollbarWidth: 'none',
         }}>
           {options.length === 0 ? (
@@ -61,7 +61,7 @@ export default function MultiSelectDropdown({ label, options, selected, onToggle
                 style={{
                   display: 'flex', alignItems: 'center', gap: 10,
                   width: '100%', padding: '8px 14px',
-                  background: on ? 'rgba(16,185,129,.06)' : 'none',
+                  background: on ? 'var(--grd)' : 'none',
                   border: 'none', cursor: 'pointer', fontFamily: 'inherit',
                   textAlign: 'left', transition: 'background .1s',
                 }}

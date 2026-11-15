@@ -96,7 +96,7 @@ export default function CategoryModal({ category, onSave, onClose }) {
 const s = {
   overlay: {
     position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.85)',
+    background: 'var(--overlay)',
     backdropFilter: 'blur(8px)',
     WebkitBackdropFilter: 'blur(8px)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -104,13 +104,11 @@ const s = {
     padding: '16px',
   },
   modal: {
-    background: 'rgba(15,25,20,0.97)',
-    backdropFilter: 'blur(30px) saturate(150%)',
-    WebkitBackdropFilter: 'blur(30px) saturate(150%)',
-    border: '1px solid rgba(255,255,255,0.12)',
+    background: 'var(--surface)',
+    border: '1px solid var(--bd)',
     borderRadius: 24,
     width: '100%', maxWidth: 480,
-    boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
+    boxShadow: 'var(--shadow)',
     maxHeight: '85vh',
     display: 'flex', flexDirection: 'column',
     overflow: 'hidden',
@@ -120,7 +118,7 @@ const s = {
   scrollBody: { flex: 1, overflowY: 'auto', padding: '0 1.5rem 0.5rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' },
   label: { color: 'var(--tx2)', fontSize: '0.8rem' },
   input: {
-    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: '8px',
+    background: 'var(--s2)', border: '1px solid var(--bd2)', borderRadius: '8px',
     color: 'var(--tx)', padding: '0.6rem 0.75rem', fontSize: '0.95rem', outline: 'none',
     fontFamily: 'inherit', width: '100%',
   },
@@ -130,7 +128,7 @@ const s = {
   error: { color: 'var(--re)', fontSize: '0.82rem', margin: '0.25rem 0 0' },
   footer: { display: 'flex', gap: '0.75rem', padding: '0.75rem 1.5rem 1.25rem', borderTop: '1px solid var(--bd)', flexShrink: 0 },
   btnPrimary: {
-    flex: 1, padding: '0.65rem', background: 'var(--gr)', color: '#000',
+    flex: 1, padding: '0.65rem', background: 'var(--gr)', color: 'var(--on-accent)',
     border: 'none', borderRadius: '8px', fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
   },
   btnSecondary: {

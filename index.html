@@ -1,10 +1,19 @@
 <!doctype html>
-<html lang="es">
+<html lang="es" data-theme="bosque">
   <head>
     <meta charset="UTF-8" />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
     <title>Mia</title>
+    <script>
+      // Aplica el tema guardado antes del primer paint (evita flash del default)
+      try {
+        var t = localStorage.getItem('mia-theme');
+        var legacy = { aurora: 'bosque', obsidian: 'grafito', nebula: 'tinta' };
+        t = legacy[t] || t;
+        if (['bosque', 'grafito', 'tinta', 'porcelana'].indexOf(t) !== -1) document.documentElement.dataset.theme = t;
+      } catch (e) {}
+    </script>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap" rel="stylesheet">

@@ -1,154 +1,58 @@
-import { useState, useMemo } from 'react'
-import {
-  ArrowDownRight, ArrowUpRight, Wallet, Receipt,
-  ShoppingBag, TrendingUp, Sparkles, Loader2,
-} from 'lucide-react'
+import { useMemo, useState } from 'react'
+import { Sparkles } from 'lucide-react'
 import { useMonthsTransactions } from '../context/DataContext'
 import { computeMetrics } from '../lib/metrics'
 import { fmtARS } from '../lib/fmt'
+import { typeByCategoryName } from '../lib/categoryTypes'
+import { InformeSkeleton } from '../components/Skeleton'
+
+// Informe (docs/rediseno-v2.md §7): ¿Cómo me fue? · ¿Qué cambió? · Consejo IA
 
 const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre']
 
 const ChevL = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
     <polyline points="15 18 9 12 15 6"/>
   </svg>
 )
 const ChevR = () => (
-  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" aria-hidden="true">
     <polyline points="9 18 15 12 9 6"/>
   </svg>
 )
 
-function delta(now, prev) {
-  const diff = now - prev
-  const pct = prev === 0 ? 0 : (diff / prev) * 100
-  return { diff, pct }
+/**
+ * Variación porcentual segura.
+ * - prev === 0 → null (no hay base: el que llama muestra "nuevo" o "igual")
+ * - prev < 0  → divide por |prev| para que el signo no se invierta
+ */
+function pctChange(now, prev) {
+  if (!prev) return null
+  return ((now - prev) / Math.abs(prev)) * 100
 }
 
-function DeltaPill({ value, tone }) {
-  const up = value >= 0
-  const color = tone === 'positive' ? '#2ee6a8' : tone === 'negative' ? '#f87171' : '#f5a524'
-  return (
-    <span style={{
-      display: 'inline-flex', alignItems: 'center', gap: 4,
-      borderRadius: 999, padding: '2px 8px', fontSize: 11, fontWeight: 600,
-      color, backgroundColor: `${color}1a`, border: `1px solid ${color}33`,
-      fontFamily: 'JetBrains Mono, monospace',
-    }}>
-      {up
-        ? <ArrowUpRight style={{ width: 12, height: 12 }} />
-        : <ArrowDownRight style={{ width: 12, height: 12 }} />}
-      {up ? '+' : ''}{value.toFixed(1)}%
-    </span>
-  )
+// El color indica mejor/peor, no el signo (spec §1)
+function toneFor(diff, betterWhen) {
+  if (diff === 0) return 'var(--tx2)'
+  const better = betterWhen === 'higher' ? diff > 0 : diff < 0
+  return better ? 'var(--gr)' : 'var(--re)'
 }
 
-function MetricCard({ label, value, prev, betterWhen, icon: Icon, accent }) {
-  const d = delta(value, prev)
-  const isBetter = betterWhen === 'higher' ? d.diff >= 0 : d.diff <= 0
-  const pillTone = isBetter ? 'positive' : 'negative'
-  return (
-    <div style={{
-      position: 'relative', overflow: 'hidden', borderRadius: 16, padding: 16,
-      background: 'rgba(255,255,255,0.055)', backdropFilter: 'blur(28px) saturate(150%)',
-      WebkitBackdropFilter: 'blur(28px) saturate(150%)',
-      border: '1px solid rgba(255,255,255,0.11)',
-      boxShadow: '0 16px 50px rgba(0,0,0,0.4)',
-    }}>
-      <div style={{
-        position: 'absolute', right: -40, top: -40, width: 128, height: 128,
-        borderRadius: '50%', opacity: 0.25, filter: 'blur(24px)', background: accent,
-        pointerEvents: 'none',
-      }} />
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 8, fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.08em', color: 'var(--tx3)' }}>
-          <span style={{
-            display: 'grid', placeItems: 'center', width: 28, height: 28,
-            borderRadius: 8, background: `${accent}1f`, color: accent,
-          }}>
-            <Icon style={{ width: 14, height: 14 }} />
-          </span>
-          {label}
-        </div>
-        <DeltaPill value={d.pct} tone={pillTone} />
-      </div>
-      <div style={{ marginTop: 12, display: 'flex', alignItems: 'baseline', gap: 4 }}>
-        <span style={{ fontSize: 12, color: 'var(--tx3)', fontFamily: 'JetBrains Mono, monospace' }}>$</span>
-        <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 22, fontWeight: 700, color: 'var(--tx)', letterSpacing: '-0.02em' }}>
-          {fmtARS(Math.abs(value))}
-        </span>
-      </div>
-      <div style={{ marginTop: 4, fontSize: 11, color: 'var(--tx3)', fontFamily: 'JetBrains Mono, monospace' }}>
-        antes {fmtARS(Math.abs(prev))} · {d.diff >= 0 ? '+' : '−'}{fmtARS(Math.abs(d.diff))}
-      </div>
-    </div>
-  )
-}
+const signed = n => `${n > 0 ? '+' : '−'}${fmtARS(Math.abs(n))}`
 
-function Donut({ income, spent }) {
-  const pct = income > 0 ? Math.min(100, Math.round((spent / income) * 100)) : 0
-  const r = 70
-  const c = 2 * Math.PI * r
-  const offset = c - (pct / 100) * c
-  return (
-    <div style={{ position: 'relative', display: 'grid', placeItems: 'center', flexShrink: 0 }}>
-      <svg width="180" height="180" viewBox="0 0 180 180" style={{ transform: 'rotate(-90deg)' }}>
-        <defs>
-          <linearGradient id="donut-ring" x1="0" x2="1" y1="0" y2="1">
-            <stop offset="0%" stopColor="#2ee6a8" />
-            <stop offset="100%" stopColor="#7dd3fc" />
-          </linearGradient>
-        </defs>
-        <circle cx="90" cy="90" r={r} stroke="rgba(255,255,255,0.06)" strokeWidth="14" fill="none" />
-        <circle
-          cx="90" cy="90" r={r}
-          stroke="url(#donut-ring)" strokeWidth="14" fill="none"
-          strokeLinecap="round"
-          strokeDasharray={c}
-          strokeDashoffset={offset}
-          style={{ transition: 'stroke-dashoffset 800ms ease' }}
-        />
-      </svg>
-      <div style={{ position: 'absolute', inset: 0, display: 'grid', placeItems: 'center', textAlign: 'center' }}>
-        <div>
-          <div style={{ fontSize: 10, textTransform: 'uppercase', letterSpacing: '0.12em', color: 'var(--tx3)' }}>Gastado</div>
-          <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 28, fontWeight: 700, color: 'var(--tx)' }}>{pct}%</div>
-          <div style={{ fontSize: 11, color: 'var(--tx3)', fontFamily: 'JetBrains Mono, monospace' }}>de {fmtARS(income)}</div>
-        </div>
-      </div>
-    </div>
-  )
-}
-
-function Legend({ color, label, value }) {
-  return (
-    <div style={{ display: 'flex', alignItems: 'center', gap: 8, minWidth: 0 }}>
-      <span style={{ width: 8, height: 8, borderRadius: '50%', background: color, flexShrink: 0 }} />
-      <span style={{ fontSize: 11, color: 'var(--tx3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</span>
-      <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 11, color: 'var(--tx)', marginLeft: 'auto', flexShrink: 0 }}>{fmtARS(value)}</span>
-    </div>
-  )
-}
-
-const glassCard = {
-  borderRadius: 24, padding: 20,
-  background: 'rgba(255,255,255,0.055)',
-  backdropFilter: 'blur(28px) saturate(150%)',
-  WebkitBackdropFilter: 'blur(28px) saturate(150%)',
-  border: '1px solid rgba(255,255,255,0.11)',
-  boxShadow: '0 16px 50px rgba(0,0,0,0.4)',
-}
+const ADVICE_URL = import.meta.env.PROD
+  ? '/api/advice'
+  : 'https://mia-expense-tracker.vercel.app/api/advice'
 
 export default function Informe() {
   const [monthOff, setMonthOff] = useState(0)
-  const now = new Date()
+  const now    = new Date()
   const target = new Date(now.getFullYear(), now.getMonth() + monthOff, 1)
-  const year = target.getFullYear()
-  const month = target.getMonth()
-  const [advice, setAdvice] = useState([])
-  const [loadingAdvice, setLoadingAdvice] = useState(false)
-  const [adviceError, setAdviceError] = useState(null)
+  const year   = target.getFullYear()
+  const month  = target.getMonth()
+  const prevDate = new Date(year, month - 1, 1)
+  const monthName = MONTHS[month].toLowerCase()
+  const prevName  = MONTHS[prevDate.getMonth()].toLowerCase()
 
   const months = useMemo(() => {
     const prev = new Date(year, month - 1, 1)
@@ -157,207 +61,288 @@ export default function Informe() {
   const { data: [current, prev], loading } = useMonthsTransactions(months)
   const metrics     = useMemo(() => (loading ? null : computeMetrics(current ?? [])), [loading, current])
   const prevMetrics = useMemo(() => (loading ? null : computeMetrics(prev ?? [])), [loading, prev])
+  const typeByName  = useMemo(() => typeByCategoryName(current ?? []), [current])
+  const hasPrev     = (prev?.length ?? 0) > 0
 
-  const fetchAdvice = async () => {
-    setLoadingAdvice(true)
-    setAdviceError(null)
-    const apiUrl = import.meta.env.PROD
-      ? '/api/advice'
-      : 'https://mia-expense-tracker.vercel.app/api/advice'
+  // Consejos guardados por mes: cambiar de mes no muestra el consejo de otro,
+  // y una respuesta que llega tarde no pisa la del mes que se está viendo.
+  const monthKey = `${year}-${month}`
+  const [adviceByMonth, setAdviceByMonth] = useState({})
+  const advice = adviceByMonth[monthKey] ?? { status: 'idle', tips: [], error: null }
+
+  async function fetchAdvice() {
+    const key = monthKey
+    // Mientras se regenera se conservan los tips anteriores (no se vacía la card de golpe)
+    const set = patch => setAdviceByMonth(all => ({ ...all, [key]: { tips: [], ...all[key], ...patch } }))
+    set({ status: 'loading', error: null })
     try {
-      const res = await fetch(apiUrl, {
+      const res = await fetch(ADVICE_URL, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
+        // Mismo contrato que antes con api/advice.js
         body: JSON.stringify({ metrics, prevMetrics, month: month + 1, year }),
       })
-      if (!res.ok) throw new Error(`Error ${res.status}`)
+      if (!res.ok) throw new Error(`El servidor respondió ${res.status}`)
       const data = await res.json()
-      setAdvice(data.advice)
+      const tips = Array.isArray(data.advice) ? data.advice.filter(t => typeof t === 'string' && t.trim()) : []
+      if (tips.length === 0) throw new Error('La respuesta no trajo consejos')
+      set({ status: 'done', tips })
     } catch (err) {
-      setAdviceError(err.message)
-    } finally {
-      setLoadingAdvice(false)
+      set({ status: 'error', error: err.message })
     }
   }
-
-  const m = metrics ?? { totalIncome: 0, totalFixedPaid: 0, totalVariable: 0, available: 0, byCategory: [] }
-  const p = prevMetrics ?? { totalIncome: 0, totalFixedPaid: 0, totalVariable: 0, available: 0, byCategory: [] }
-  const spent = m.totalFixedPaid + m.totalVariable
-  const income = m.totalIncome || 1
-  const fixedPct  = Math.min(100, (m.totalFixedPaid / income) * 100)
-  const varPct    = Math.min(100 - fixedPct, (m.totalVariable / income) * 100)
-  const availPct  = Math.max(0, 100 - fixedPct - varPct)
-  const totalCatAmt = m.byCategory.reduce((s, c) => s + c.amount, 0)
-  const dAvail    = delta(m.available, p.available)
 
   return (
     <div className="screen">
       <div style={{ maxWidth: 900, margin: '0 auto' }}>
 
-        {/* Header */}
-        <div style={{ padding: '6px 16px 12px' }}>
+        {/* Header + selector de mes */}
+        <div style={{ padding: '6px 16px 16px' }}>
           <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>Informe</div>
           <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-            <button onClick={() => setMonthOff(o => o - 1)} style={s.navBtn} aria-label="Mes anterior"><ChevL /></button>
-            <span style={{ fontSize: 14, fontWeight: 600, color: '#bbb' }}>{MONTHS[month]} {year}</span>
+            <button type="button" onClick={() => setMonthOff(o => o - 1)} style={s.navBtn} aria-label="Mes anterior"><ChevL /></button>
+            <h1 style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx)' }} aria-live="polite">{MONTHS[month]} {year}</h1>
             <button
+              type="button"
               onClick={() => setMonthOff(o => Math.min(o + 1, 0))}
-              style={{ ...s.navBtn, opacity: monthOff === 0 ? .3 : 1 }}
+              style={{ ...s.navBtn, opacity: monthOff === 0 ? .35 : 1, cursor: monthOff === 0 ? 'default' : 'pointer' }}
               aria-label="Mes siguiente"
               aria-disabled={monthOff === 0}
             ><ChevR /></button>
           </div>
         </div>
 
-        {/* Loading */}
-        {loading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: '4rem 0' }}>
-            <div style={{ width: 32, height: 32, borderRadius: '50%', border: '2px solid rgba(255,255,255,0.1)', borderTop: '2px solid #2ee6a8', animation: 'spin 0.8s linear infinite' }} />
-          </div>
-        ) : (
-          <div style={{ padding: '0 16px 32px', display: 'flex', flexDirection: 'column', gap: 16 }}>
-
-            {/* Hero card */}
-            <div style={glassCard}>
-              <div style={{ display: 'flex', gap: 20, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'center' }}>
-                <Donut income={m.totalIncome} spent={spent} />
-                <div style={{ flex: 1, minWidth: 160 }}>
-                  <div style={{ fontSize: 11, textTransform: 'uppercase', letterSpacing: '0.1em', color: 'var(--tx3)', marginBottom: 6 }}>Disponible este mes</div>
-                  <div style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 28, fontWeight: 700, color: m.available >= 0 ? 'var(--gr)' : 'var(--re)', letterSpacing: '-0.02em', lineHeight: 1, marginBottom: 8 }}>
-                    {fmtARS(m.available)}
-                  </div>
-                  <div style={{ marginBottom: 12 }}>
-                    <DeltaPill value={dAvail.pct} tone={dAvail.diff >= 0 ? 'positive' : 'negative'} />
-                  </div>
-                  <div style={{ height: 8, borderRadius: 4, overflow: 'hidden', display: 'flex', marginBottom: 10, background: 'rgba(255,255,255,0.05)' }}>
-                    <div style={{ width: `${fixedPct.toFixed(1)}%`, background: '#f5a524', transition: 'width .5s' }} />
-                    <div style={{ width: `${varPct.toFixed(1)}%`, background: '#f87171', transition: 'width .5s' }} />
-                    <div style={{ width: `${availPct.toFixed(1)}%`, background: '#2ee6a8', transition: 'width .5s' }} />
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: 5 }}>
-                    <Legend color="#f5a524" label="Fijos" value={m.totalFixedPaid} />
-                    <Legend color="#f87171" label="Variables" value={m.totalVariable} />
-                    <Legend color="#2ee6a8" label="Disponible" value={Math.max(0, m.available)} />
-                  </div>
-                </div>
-              </div>
+        <div style={{ padding: '0 16px 32px' }}>
+          {loading ? <InformeSkeleton /> : (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
+              <HowDidIDo m={metrics} p={prevMetrics} hasPrev={hasPrev} monthName={monthName} prevName={prevName} />
+              <VsPrevTable m={metrics} p={prevMetrics} hasPrev={hasPrev} monthLabel={MONTHS[month]} prevName={prevName} />
+              <CategoryChanges m={metrics} p={prevMetrics} hasPrev={hasPrev} typeByName={typeByName} />
+              <AdviceCard advice={advice} monthName={monthName} onGenerate={fetchAdvice} />
             </div>
-
-            {/* 4 metric cards */}
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 10 }}>
-              <MetricCard label="Ingresos"   value={m.totalIncome}    prev={p.totalIncome}    betterWhen="higher" icon={Wallet}      accent="#2ee6a8" />
-              <MetricCard label="Fijos"      value={m.totalFixedPaid} prev={p.totalFixedPaid} betterWhen="lower"  icon={Receipt}     accent="#f5a524" />
-              <MetricCard label="Variables"  value={m.totalVariable}  prev={p.totalVariable}  betterWhen="lower"  icon={ShoppingBag} accent="#f87171" />
-              <MetricCard label="Disponible" value={m.available}      prev={p.available}      betterWhen="higher" icon={TrendingUp}   accent="#7dd3fc" />
-            </div>
-
-            {/* Top categorías */}
-            {m.byCategory.length > 0 && (
-              <div style={glassCard}>
-                <div className="slbl" style={{ marginBottom: 14 }}>Top categorías</div>
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-                  {m.byCategory.slice(0, 6).map(cat => {
-                    const pct = totalCatAmt > 0 ? (cat.amount / totalCatAmt * 100) : 0
-                    return (
-                      <div key={cat.name}>
-                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginBottom: 5 }}>
-                          <div style={{ width: 26, height: 26, borderRadius: 8, background: `${cat.color}22`, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                            <div style={{ width: 8, height: 8, borderRadius: '50%', background: cat.color }} />
-                          </div>
-                          <span style={{ fontSize: 12, color: 'var(--tx2)', flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{cat.name}</span>
-                          <span style={{ fontFamily: 'JetBrains Mono, monospace', fontSize: 12, color: 'var(--tx)', fontWeight: 600, flexShrink: 0 }}>{fmtARS(cat.amount)}</span>
-                          <span style={{ fontSize: 11, color: 'var(--tx3)', flexShrink: 0, minWidth: 34, textAlign: 'right' }}>{pct.toFixed(0)}%</span>
-                        </div>
-                        <div style={{ height: 5, borderRadius: 3, overflow: 'hidden', background: 'rgba(255,255,255,0.06)', marginLeft: 36 }}>
-                          <div style={{
-                            height: '100%', borderRadius: 3, width: `${pct}%`,
-                            background: `linear-gradient(90deg, ${cat.color}, ${cat.color}66)`,
-                            transition: 'width .5s cubic-bezier(.4,0,.2,1)',
-                          }} />
-                        </div>
-                      </div>
-                    )
-                  })}
-                </div>
-              </div>
-            )}
-
-            {/* AI advice */}
-            <div style={{ position: 'relative', borderRadius: 24, padding: 1, overflow: 'hidden' }}>
-              <div style={{ position: 'absolute', inset: 0, borderRadius: 24, background: 'conic-gradient(from 140deg at 50% 50%, #2ee6a8, #7dd3fc, #f5a524, #2ee6a8)', opacity: 0.55, filter: 'blur(0.5px)' }} />
-              <div style={{ position: 'relative', borderRadius: 23, background: 'rgba(255,255,255,0.08)', backdropFilter: 'blur(28px) saturate(150%)', WebkitBackdropFilter: 'blur(28px) saturate(150%)', padding: '20px 24px' }}>
-              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: 14 }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                  <span style={{ display: 'grid', placeItems: 'center', width: 28, height: 28, borderRadius: 8, background: 'rgba(46,230,168,0.12)', color: '#2ee6a8' }}>
-                    <Sparkles style={{ width: 14, height: 14 }} />
-                  </span>
-                  <span className="slbl" style={{ color: '#05100d' }}>Consejo IA</span>
-                </div>
-                <button
-                  onClick={fetchAdvice}
-                  disabled={loadingAdvice}
-                  style={{
-                    display: 'flex', alignItems: 'center', gap: 6,
-                    padding: '6px 14px', borderRadius: 20,
-                    background: loadingAdvice ? 'rgba(255,255,255,0.06)' : 'linear-gradient(135deg,#2ee6a8,#22d3ee)',
-                    border: 'none', color: loadingAdvice ? 'var(--tx3)' : '#000',
-                    fontSize: 12, fontWeight: 600,
-                    cursor: loadingAdvice ? 'not-allowed' : 'pointer',
-                    fontFamily: 'inherit', opacity: loadingAdvice ? 0.6 : 1,
-                  }}
-                >
-                  <>
-                    {loadingAdvice
-                      ? <Loader2 style={{ width: 14, height: 14, animation: 'spin 0.8s linear infinite' }} />
-                      : <Sparkles style={{ width: 14, height: 14 }} />
-                    }
-                    {advice.length > 0 ? 'Regenerar' : 'Generar'}
-                  </>
-                </button>
-              </div>
-
-              {loadingAdvice && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-                  {[80, 60, 72].map((w, i) => (
-                    <div key={i} style={{ height: 12, borderRadius: 6, background: 'rgba(255,255,255,0.07)', width: `${w}%`, animation: `flash 1.4s ease-in-out infinite`, animationDelay: `${i * 0.18}s` }} />
-                  ))}
-                </div>
-              )}
-
-              {adviceError && (
-                <p style={{ fontSize: 13, color: 'var(--re)', margin: 0 }}>{adviceError}</p>
-              )}
-
-              {!loadingAdvice && advice.length > 0 && (
-                <div>
-                  {advice.map((tip, i) => (
-                    <div key={i} style={{ display: 'flex', gap: 10, alignItems: 'flex-start', marginTop: i === 0 ? 16 : 12 }}>
-                      <span style={{ color: '#05100d', opacity: 0.6, fontSize: 18, lineHeight: 1.4, flexShrink: 0 }}>•</span>
-                      <p style={{ fontSize: 13, lineHeight: 1.6, color: '#05100d', margin: 0 }}>{tip}</p>
-                    </div>
-                  ))}
-                </div>
-              )}
-
-              {!loadingAdvice && advice.length === 0 && !adviceError && (
-                <p style={{ fontSize: 13, color: 'rgba(5,16,13,0.7)', margin: 0 }}>Generá un análisis IA de tus finanzas del mes.</p>
-              )}
-              </div>
-            </div>
-
-          </div>
-        )}
+          )}
+        </div>
 
       </div>
     </div>
   )
 }
 
+// ── 1. ¿Cómo me fue? ──
+function HowDidIDo({ m, p, hasPrev, monthName, prevName }) {
+  const positive = m.available >= 0
+  const diff     = m.available - p.available
+  const spent    = m.totalFixedPaid + m.totalVariable
+  const spentPct = m.totalIncome > 0 ? Math.round((spent / m.totalIncome) * 100) : null
+
+  return (
+    <section className="card" style={{ padding: 20 }} aria-labelledby="inf-how">
+      <h2 id="inf-how" style={s.label}>{positive ? `Te sobró en ${monthName}` : `Te faltó en ${monthName}`}</h2>
+      <div className="mono" style={{ fontSize: 38, fontWeight: 700, lineHeight: 1.1, margin: '6px 0 10px', color: positive ? 'var(--gr)' : 'var(--re)' }}>
+        {fmtARS(Math.abs(m.available))}
+      </div>
+      <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--tx2)' }}>
+        {!hasPrev ? (
+          <>Sin datos de {prevName} para comparar.</>
+        ) : diff === 0 ? (
+          <>Lo mismo que en {prevName}.</>
+        ) : (
+          <>
+            <strong style={{ color: toneFor(diff, 'higher'), fontWeight: 700 }}>
+              <span className="mono">{fmtARS(Math.abs(diff))}</span> {diff > 0 ? 'más' : 'menos'}
+            </strong>{' '}
+            que en {prevName}.
+          </>
+        )}{' '}
+        {spentPct === null
+          ? 'Todavía no hay ingresos cargados este mes.'
+          : `Gastaste el ${spentPct}% de lo que entró.`}
+      </p>
+    </section>
+  )
+}
+
+// ── 2a. Tabla vs mes anterior (reemplaza las MetricCards) ──
+function VsPrevTable({ m, p, hasPrev, monthLabel, prevName }) {
+  const rows = [
+    { label: 'Ingresos',  color: 'var(--gr)', now: m.totalIncome,    prev: p.totalIncome,    betterWhen: 'higher' },
+    { label: 'Fijos',     color: 'var(--am)', now: m.totalFixedPaid, prev: p.totalFixedPaid, betterWhen: 'lower' },
+    { label: 'Variables', color: 'var(--pu)', now: m.totalVariable,  prev: p.totalVariable,  betterWhen: 'lower' },
+  ]
+
+  return (
+    <section className="card" style={{ padding: 20 }} aria-labelledby="inf-vs">
+      <h2 id="inf-vs" style={{ ...s.label, marginBottom: 8 }}>vs {prevName}</h2>
+      <table style={s.table}>
+        <thead>
+          <tr>
+            <th scope="col" style={{ ...s.th, textAlign: 'left' }}><span className="sr-only">Concepto</span></th>
+            <th scope="col" style={s.th}>{monthLabel}</th>
+            <th scope="col" style={s.th}>Diferencia</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map(r => {
+            const diff = r.now - r.prev
+            return (
+              <tr key={r.label}>
+                <th scope="row" style={{ ...s.td, textAlign: 'left', fontWeight: 500, color: 'var(--tx)' }}>
+                  <span style={{ display: 'inline-flex', alignItems: 'center', gap: 8 }}>
+                    <span style={{ width: 8, height: 8, borderRadius: 2, background: r.color }} aria-hidden="true" />
+                    {r.label}
+                  </span>
+                </th>
+                <td className="mono" style={{ ...s.td, color: 'var(--tx)' }}>{fmtARS(r.now)}</td>
+                <td className="mono" style={{ ...s.td, color: hasPrev ? toneFor(diff, r.betterWhen) : 'var(--tx3)', fontWeight: 600 }}>
+                  {!hasPrev ? '—' : diff === 0 ? 'igual' : signed(diff)}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </section>
+  )
+}
+
+// ── 2b. Qué cambió por categoría ──
+function CategoryChanges({ m, p, hasPrev, typeByName }) {
+  const top = m.byCategory.slice(0, 5)                 // byCategory viene ordenado desc
+  const max = top[0]?.amount ?? 0
+  const prevByName = Object.fromEntries(p.byCategory.map(c => [c.name, c.amount]))
+
+  return (
+    <section className="card" style={{ padding: 20 }} aria-labelledby="inf-cats">
+      <h2 id="inf-cats" style={{ ...s.label, marginBottom: 16 }}>Qué cambió por categoría</h2>
+
+      {top.length === 0 ? (
+        <p style={{ fontSize: 13, color: 'var(--tx2)' }}>Sin gastos este mes.</p>
+      ) : (
+        <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 16 }}>
+          {top.map(({ name, amount }) => {
+            const isFixed = typeByName[name] === 'fixed'
+            const pct     = pctChange(amount, prevByName[name] ?? 0)
+            const rounded = pct === null ? null : Math.round(pct)
+            // Sin dato previo → "nuevo"; sin cambio → "igual"; gasto que sube = peor (--re)
+            const change = !hasPrev || pct === null
+              ? { text: 'nuevo', color: 'var(--tx2)' }
+              : rounded === 0
+                ? { text: 'igual', color: 'var(--tx2)' }
+                : { text: `${rounded > 0 ? '+' : '−'}${Math.abs(rounded)}%`, color: rounded > 0 ? 'var(--re)' : 'var(--gr)' }
+
+            return (
+              <li key={name}>
+                <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 8 }}>
+                  <span style={{ flex: 1, minWidth: 0, fontSize: 14, color: 'var(--tx)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                    {name}
+                    {isFixed && <span style={{ color: 'var(--tx2)' }}> · fijo</span>}
+                  </span>
+                  <span className="mono" style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)', flexShrink: 0 }}>{fmtARS(amount)}</span>
+                  <span className="mono" style={{ fontSize: 12, fontWeight: 600, color: change.color, flexShrink: 0, minWidth: 48, textAlign: 'right' }}>
+                    {change.text}
+                  </span>
+                </div>
+                <div style={{ height: 6, borderRadius: 3, background: 'var(--s3)', overflow: 'hidden' }}>
+                  <div style={{
+                    width: `${max > 0 ? (amount / max) * 100 : 0}%`, height: '100%', borderRadius: 3,
+                    background: isFixed ? 'var(--am)' : 'var(--pu)',
+                    transition: 'width .5s cubic-bezier(.4,0,.2,1)',
+                  }} />
+                </div>
+              </li>
+            )
+          })}
+        </ul>
+      )}
+    </section>
+  )
+}
+
+// ── 3. Consejo IA ──
+function AdviceCard({ advice, monthName, onGenerate }) {
+  const { status, tips, error } = advice
+  const isLoading = status === 'loading'
+  const hasTips   = tips.length > 0
+
+  return (
+    <section style={s.adviceCard} aria-labelledby="inf-ai">
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12, marginBottom: 14 }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <span style={{ display: 'grid', placeItems: 'center', width: 32, height: 32, borderRadius: 10, background: 'var(--grd)', color: 'var(--gr)' }} aria-hidden="true">
+            <Sparkles style={{ width: 16, height: 16 }} />
+          </span>
+          <h2 id="inf-ai" style={{ fontSize: 15, fontWeight: 600, color: 'var(--tx)' }}>Consejo IA</h2>
+        </div>
+        <button type="button" onClick={onGenerate} disabled={isLoading} style={{ ...s.btnSecondary, opacity: isLoading ? .6 : 1, cursor: isLoading ? 'default' : 'pointer' }}>
+          {isLoading ? 'Generando…' : hasTips ? 'Regenerar' : 'Generar'}
+        </button>
+      </div>
+
+      <div aria-live="polite" aria-busy={isLoading}>
+        {isLoading && !hasTips && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+            {[88, 70, 80].map((w, i) => <span key={i} className="skel" style={{ width: `${w}%`, height: 13, borderRadius: 6 }} />)}
+          </div>
+        )}
+
+        {status === 'error' && (
+          <p role="alert" style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--re)', marginBottom: hasTips ? 12 : 0 }}>
+            No se pudo generar el consejo ({error}). Probá de nuevo.
+          </p>
+        )}
+
+        {hasTips && (
+          <>
+            <ol style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: 12, opacity: isLoading ? .5 : 1 }}>
+              {tips.map((tip, i) => (
+                <li key={i} style={{ display: 'flex', gap: 12, alignItems: 'baseline' }}>
+                  <span className="mono" style={{ fontSize: 12, fontWeight: 700, color: 'var(--gr)', flexShrink: 0 }}>
+                    {String(i + 1).padStart(2, '0')}
+                  </span>
+                  <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--tx)' }}>{tip}</p>
+                </li>
+              ))}
+            </ol>
+            <p style={{ fontSize: 12, color: 'var(--tx2)', marginTop: 14 }}>
+              Generado con tus datos de {monthName} · orientativo
+            </p>
+          </>
+        )}
+
+        {status === 'idle' && (
+          <p style={{ fontSize: 14, lineHeight: 1.55, color: 'var(--tx2)' }}>
+            Generá 3 consejos a partir de tus números de {monthName}.
+          </p>
+        )}
+      </div>
+    </section>
+  )
+}
+
 const s = {
+  label: { fontSize: 12, fontWeight: 600, color: 'var(--tx2)' },
   navBtn: {
-    width: 40, height: 40, borderRadius: 10,
+    width: 44, height: 44, borderRadius: 14,
     background: 'var(--s2)', border: '1px solid var(--bd2)',
     cursor: 'pointer', display: 'flex', alignItems: 'center',
-    justifyContent: 'center', color: '#666',
+    justifyContent: 'center', color: 'var(--tx2)',
+  },
+  table: { width: '100%', borderCollapse: 'collapse', fontSize: 14 },
+  th: {
+    padding: '8px 0', fontSize: 12, fontWeight: 600, color: 'var(--tx2)',
+    textAlign: 'right', borderBottom: '1px solid var(--bd)',
+  },
+  td: {
+    padding: '12px 0', textAlign: 'right', whiteSpace: 'nowrap',
+    borderBottom: '1px solid var(--bd)',
+  },
+  adviceCard: {
+    padding: 20, borderRadius: 20,
+    background: 'var(--s2)', border: '1px solid var(--bd2)',
+  },
+  btnSecondary: {
+    minHeight: 44, padding: '0 16px', borderRadius: 14,
+    background: 'var(--surface)', border: '1px solid var(--bd2)',
+    color: 'var(--tx)', fontSize: 13, fontWeight: 600, fontFamily: 'inherit',
   },
 }

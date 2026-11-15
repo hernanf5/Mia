@@ -1,7 +1,10 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useId, useRef, useState } from 'react'
 import { useAuth } from '../context/AuthContext'
-import { useCategories } from '../hooks/useCategories'
+import { fetchSubcategories } from '../hooks/useCategories'
 import { useData } from '../context/DataContext'
+
+// Nuevo / editar movimiento (docs/rediseno-v2.md §6).
+// Bottom sheet en mobile, modal centrado en desktop (.sheet* en index.css).
 
 // Fecha local (toISOString usa UTC: en Argentina después de las 21hs daría mañana)
 const today = () => {
@@ -9,33 +12,77 @@ const today = () => {
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
 }
 
-export default function TransactionModal({ transaction = null, onSave, onClose }) {
-  const { user }            = useAuth()
-  const { fetchCategories, fetchSubcategories } = useCategories()
-  const { createTransaction, updateTransaction } = useData()
+const TYPES = [
+  { id: 'variable', label: 'Variable', hint: 'Gasto del día a día', color: 'var(--pu)', tint: 'var(--pud)', cta: 'Guardar gasto' },
+  { id: 'fixed',    label: 'Fijo',     hint: 'Se repite cada mes',  color: 'var(--am)', tint: 'var(--amd)', cta: 'Agregar a fijos del mes' },
+  { id: 'income',   label: 'Ingreso',  hint: 'Sueldo, extras',      color: 'var(--gr)', tint: 'var(--grd)', cta: 'Guardar ingreso' },
+]
 
-  const [categories,    setCategories]    = useState([])
-  const [subcategories, setSubcategories] = useState([])
+const CloseIcon = () => (
+  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.2" strokeLinecap="round" aria-hidden="true">
+    <line x1="6" y1="6" x2="18" y2="18"/><line x1="18" y1="6" x2="6" y2="18"/>
+  </svg>
+)
+
+export default function TransactionModal({ transaction = null, onSave, onClose }) {
+  const { user } = useAuth()
+  const { createTransaction, updateTransaction, categories, loadingCategories } = useData()
+  const ids = useId()
+  const sheetRef = useRef(null)
+  const onCloseRef = useRef(onClose)
+  useEffect(() => { onCloseRef.current = onClose })
+
+  // Al editar, el tipo sale de la categoría (viene en el join de la transacción)
+  const initialType = transaction?.category?.type
+    ?? categories.find(c => c.id === transaction?.category_id)?.type
+    ?? 'variable'
+
+  const [type,          setType]          = useState(initialType)
   const [amount,        setAmount]        = useState(transaction ? Math.abs(Number(transaction.amount)).toString() : '')
   const [description,   setDesc]          = useState(transaction?.description ?? '')
   const [date,          setDate]          = useState(transaction?.date ?? today())
   const [categoryId,    setCategoryId]    = useState(transaction?.category_id ?? '')
   const [subcategoryId, setSubcategoryId] = useState(transaction?.subcategory_id ?? '')
   const [observations,  setObs]           = useState(transaction?.observations ?? '')
+  const [showObs,       setShowObs]       = useState(Boolean(transaction?.observations))
+  const [subcategories, setSubcategories] = useState([])
   const [error,         setError]         = useState(null)
   const [loading,       setLoading]       = useState(false)
 
+  const typeMeta    = TYPES.find(t => t.id === type) ?? TYPES[0]
+  const typeCats    = categories.filter(c => c.type === type)
+  const selectedCat = categories.find(c => c.id === categoryId)
+
+  // Subcategorías de la categoría elegida
   useEffect(() => {
-    fetchCategories().then(({ data }) => setCategories(data ?? []))
+    if (!categoryId) return
+    let cancelled = false
+    fetchSubcategories(categoryId).then(({ data }) => {
+      if (!cancelled) setSubcategories(data ?? [])
+    })
+    return () => { cancelled = true }
+  }, [categoryId])
+
+  // Al abrir: foco en el sheet (teclado / lectores de pantalla) y Escape para cerrar
+  useEffect(() => {
+    sheetRef.current?.focus()
+    const onKey = e => { if (e.key === 'Escape') onCloseRef.current() }
+    document.addEventListener('keydown', onKey)
+    return () => document.removeEventListener('keydown', onKey)
   }, [])
 
-  useEffect(() => {
-    if (!categoryId) { setSubcategories([]); return }
-    fetchSubcategories(categoryId).then(({ data }) => {
-      setSubcategories(data ?? [])
-      if (!transaction || transaction.category_id !== categoryId) setSubcategoryId('')
-    })
-  }, [categoryId])
+  function selectType(next) {
+    if (next === type) return
+    setType(next)
+    // La categoría elegida ya no pertenece al tipo nuevo
+    if (selectedCat && selectedCat.type !== next) selectCategory('')
+  }
+
+  function selectCategory(id) {
+    setCategoryId(id)
+    setSubcategoryId('')
+    setSubcategories([])
+  }
 
   async function handleSubmit(e) {
     e.preventDefault()
@@ -46,7 +93,7 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
     setError(null)
     setLoading(true)
 
-    const selectedCat = categories.find(c => c.id === categoryId)
+    // Signo según el tipo de la categoría (sin cambios respecto de la lógica anterior)
     const finalAmount = selectedCat?.type === 'income' ? num : -num
 
     const payload = {
@@ -68,103 +115,167 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
     onSave?.(saved)
   }
 
-  const grouped = {
-    income:   categories.filter(c => c.type === 'income'),
-    fixed:    categories.filter(c => c.type === 'fixed'),
-    variable: categories.filter(c => c.type === 'variable'),
-  }
-  const TYPE_LABEL = { income: 'Ingresos', fixed: 'Gastos fijos', variable: 'Variables' }
-  const selectedCat = categories.find(c => c.id === categoryId)
-  const isFixed = selectedCat?.type === 'fixed'
-
   return (
-    <div style={s.overlay} onClick={onClose}>
-      <div style={s.modal} onClick={e => e.stopPropagation()}>
-        <h3 style={s.title}>{transaction ? 'Editar transacción' : 'Nueva transacción'}</h3>
+    <div className="sheet-overlay" onClick={onClose}>
+      <div
+        ref={sheetRef}
+        className="sheet"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby={`${ids}-title`}
+        tabIndex={-1}
+        onClick={e => e.stopPropagation()}
+      >
+        <div className="sheet-handle" aria-hidden="true" />
 
-        <form onSubmit={handleSubmit} style={s.form}>
-          <div style={s.scrollBody}>
-            <label style={s.label} htmlFor="tx-monto">Monto</label>
-            <input
-              id="tx-monto"
-              style={s.input}
-              type="number"
-              min="0"
-              step="0.01"
-              value={amount}
-              onChange={e => setAmount(e.target.value)}
-              placeholder="0"
-              autoFocus
-              inputMode="decimal"
-            />
+        <div style={s.header}>
+          <h2 id={`${ids}-title`} style={s.title}>
+            {transaction ? 'Editar movimiento' : '¿Qué querés cargar?'}
+          </h2>
+          <button type="button" onClick={onClose} aria-label="Cerrar" style={s.closeBtn}><CloseIcon /></button>
+        </div>
 
-            <label style={s.label} htmlFor="tx-categoria">Categoría</label>
-            <select id="tx-categoria" style={s.input} value={categoryId} onChange={e => setCategoryId(e.target.value)}>
-              <option value="">Seleccioná...</option>
-              {Object.entries(grouped).map(([type, cats]) =>
-                cats.length > 0 && (
-                  <optgroup key={type} label={TYPE_LABEL[type]}>
-                    {cats.map(c => (
-                      <option key={c.id} value={c.id}>{c.name}</option>
-                    ))}
-                  </optgroup>
+        <form onSubmit={handleSubmit} style={s.form} noValidate>
+          <div style={s.body}>
+
+            {/* Paso 1 — Tipo */}
+            <div role="radiogroup" aria-label="Tipo de movimiento" style={s.typeGrid}>
+              {TYPES.map(t => {
+                const active = t.id === type
+                return (
+                  <button
+                    key={t.id}
+                    type="button"
+                    role="radio"
+                    aria-checked={active}
+                    onClick={() => selectType(t.id)}
+                    style={{
+                      ...s.typeCard,
+                      background: active ? t.tint : 'var(--s2)',
+                      border: active ? `2px solid ${t.color}` : '1px solid var(--bd2)',
+                      padding: active ? '11px 9px' : '12px 10px',  // compensa el borde de 2px
+                    }}
+                  >
+                    <span style={{ width: 10, height: 10, borderRadius: '50%', background: t.color }} aria-hidden="true" />
+                    <span style={{ fontSize: 14, fontWeight: 600, color: 'var(--tx)' }}>{t.label}</span>
+                    <span style={{ fontSize: 11, color: 'var(--tx2)', lineHeight: 1.3 }}>{t.hint}</span>
+                  </button>
                 )
-              )}
-            </select>
+              })}
+            </div>
 
-            {isFixed && (
-              <div style={{ background: 'rgba(124,92,252,.1)', border: '1px solid rgba(124,92,252,.25)', borderRadius: 8, padding: '8px 10px', fontSize: 11, color: 'var(--pu)' }}>
-                Este gasto se agregará a tus gastos fijos del mes
+            {/* Monto */}
+            <div>
+              <label htmlFor={`${ids}-amount`} style={s.label}>Monto</label>
+              <div style={{ ...s.amountWrap, border: `2px solid ${typeMeta.color}` }}>
+                <span className="mono" style={{ fontSize: 22, color: 'var(--tx2)' }} aria-hidden="true">$</span>
+                <input
+                  id={`${ids}-amount`}
+                  className="mono"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  inputMode="decimal"
+                  value={amount}
+                  onChange={e => setAmount(e.target.value)}
+                  placeholder="0"
+                  style={s.amountInput}
+                />
+              </div>
+            </div>
+
+            {/* Categoría (filtrada por tipo) */}
+            <div>
+              <div id={`${ids}-cat`} style={s.label}>Categoría</div>
+              {loadingCategories ? (
+                <p style={s.muted}>Cargando categorías…</p>
+              ) : typeCats.length === 0 ? (
+                <p style={s.muted}>No tenés categorías de tipo {typeMeta.label.toLowerCase()}. Creá una desde Perfil → Categorías.</p>
+              ) : (
+                <div role="radiogroup" aria-labelledby={`${ids}-cat`} style={s.chips}>
+                  {typeCats.map(c => (
+                    <Chip key={c.id} active={c.id === categoryId} onClick={() => selectCategory(c.id)}>
+                      {c.name}
+                    </Chip>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            {/* Subcategoría (solo si la categoría tiene) */}
+            {categoryId && subcategories.length > 0 && (
+              <div>
+                <div id={`${ids}-sub`} style={s.label}>Subcategoría <span style={{ color: 'var(--tx3)' }}>(opcional)</span></div>
+                <div role="radiogroup" aria-labelledby={`${ids}-sub`} style={s.chips}>
+                  {subcategories.map(sub => (
+                    <Chip
+                      key={sub.id}
+                      active={sub.id === subcategoryId}
+                      onClick={() => setSubcategoryId(prev => (prev === sub.id ? '' : sub.id))}
+                    >
+                      {sub.name}
+                    </Chip>
+                  ))}
+                </div>
               </div>
             )}
 
-            {subcategories.length > 0 && (
-              <>
-                <label style={s.label} htmlFor="tx-subcategoria">Subcategoría</label>
-                <select id="tx-subcategoria" style={s.input} value={subcategoryId} onChange={e => setSubcategoryId(e.target.value)}>
-                  <option value="">Sin subcategoría</option>
-                  {subcategories.map(sub => (
-                    <option key={sub.id} value={sub.id}>{sub.name}</option>
-                  ))}
-                </select>
-              </>
+            {type === 'fixed' && (
+              <p style={s.fixedNotice}>
+                Queda pendiente en Fijos y se descuenta del disponible cuando lo marques como pagado.
+              </p>
             )}
 
-            <label style={s.label} htmlFor="tx-desc">Descripción <span style={{ color: 'var(--tx3)' }}>(opcional)</span></label>
-            <input
-              id="tx-desc"
-              style={s.input}
-              value={description}
-              onChange={e => setDesc(e.target.value)}
-              placeholder="Ej: Supermercado"
-            />
+            {/* Descripción + Fecha */}
+            <div style={s.twoCols}>
+              <div style={{ minWidth: 0 }}>
+                <label htmlFor={`${ids}-desc`} style={s.label}>Descripción</label>
+                <input
+                  id={`${ids}-desc`}
+                  style={s.input}
+                  value={description}
+                  onChange={e => setDesc(e.target.value)}
+                  placeholder="Opcional"
+                />
+              </div>
+              <div style={{ minWidth: 0 }}>
+                <label htmlFor={`${ids}-date`} style={s.label}>Fecha</label>
+                <input
+                  id={`${ids}-date`}
+                  style={s.input}
+                  type="date"
+                  value={date}
+                  onChange={e => setDate(e.target.value)}
+                />
+              </div>
+            </div>
 
-            <label style={s.label} htmlFor="tx-fecha">Fecha</label>
-            <input
-              id="tx-fecha"
-              style={{ ...s.input, colorScheme: 'dark' }}
-              type="date"
-              value={date}
-              onChange={e => setDate(e.target.value)}
-            />
+            {/* Observaciones (colapsadas) */}
+            {showObs ? (
+              <div>
+                <label htmlFor={`${ids}-obs`} style={s.label}>Observaciones</label>
+                <textarea
+                  id={`${ids}-obs`}
+                  style={{ ...s.input, resize: 'none', minHeight: 72, padding: '12px 14px' }}
+                  value={observations}
+                  onChange={e => setObs(e.target.value)}
+                  placeholder="Nota adicional…"
+                  rows={2}
+                  autoFocus={!transaction?.observations}
+                />
+              </div>
+            ) : (
+              <button type="button" onClick={() => setShowObs(true)} style={s.addObs}>
+                + Agregar observación
+              </button>
+            )}
 
-            <label style={s.label} htmlFor="tx-obs">Observaciones</label>
-            <textarea
-              id="tx-obs"
-              style={{ ...s.input, resize: 'none', minHeight: 58 }}
-              value={observations}
-              onChange={e => setObs(e.target.value)}
-              placeholder="Nota adicional..."
-              rows={2}
-            />
-
-            {error && <p style={s.error}>{error}</p>}
+            {error && <p role="alert" style={s.error}>{error}</p>}
           </div>
 
           <div style={s.footer}>
-            <button type="button" style={s.btnSecondary} onClick={onClose}>Cancelar</button>
-            <button type="submit" style={s.btnPrimary} disabled={loading}>
-              {loading ? 'Guardando...' : 'Guardar'}
+            <button type="submit" disabled={loading} style={{ ...s.btnPrimary, opacity: loading ? .7 : 1 }}>
+              {loading ? 'Guardando…' : typeMeta.cta}
             </button>
           </div>
         </form>
@@ -173,60 +284,87 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
   )
 }
 
+function Chip({ active, onClick, children }) {
+  return (
+    <button
+      type="button"
+      role="radio"
+      aria-checked={active}
+      onClick={onClick}
+      style={{
+        ...s.chip,
+        background:  active ? 'var(--tx)' : 'var(--s2)',
+        color:       active ? 'var(--bg)' : 'var(--tx)',
+        borderColor: active ? 'var(--tx)' : 'var(--bd2)',
+      }}
+    >
+      {children}
+    </button>
+  )
+}
+
 const s = {
-  overlay: {
-    position: 'fixed', inset: 0,
-    background: 'rgba(0,0,0,0.85)',
-    backdropFilter: 'blur(8px)',
-    WebkitBackdropFilter: 'blur(8px)',
+  header: {
+    display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 12,
+    padding: '8px 12px 4px 20px', flexShrink: 0,
+  },
+  title: { fontSize: 18, fontWeight: 700, color: 'var(--tx)' },
+  closeBtn: {
+    width: 44, height: 44, borderRadius: 14, flexShrink: 0,
+    background: 'none', border: 'none', color: 'var(--tx2)', cursor: 'pointer',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
-    zIndex: 300,
-    padding: '16px',
   },
-  modal: {
-    background: 'rgba(15,25,20,0.97)',
-    backdropFilter: 'blur(30px) saturate(150%)',
-    WebkitBackdropFilter: 'blur(30px) saturate(150%)',
-    border: '1px solid rgba(255,255,255,0.12)',
-    borderRadius: 24,
-    width: '100%', maxWidth: 480,
-    boxShadow: '0 24px 80px rgba(0,0,0,0.8)',
-    maxHeight: '85vh',
-    display: 'flex', flexDirection: 'column',
-    overflow: 'hidden',
+  form: { display: 'flex', flexDirection: 'column', flex: 1, minHeight: 0 },
+  body: {
+    flex: 1, overflowY: 'auto', overscrollBehavior: 'contain',
+    padding: '12px 20px 16px',
+    display: 'flex', flexDirection: 'column', gap: 18,
   },
-  title: {
-    color: 'var(--tx)', padding: '1.5rem 1.5rem 1rem',
-    fontSize: '1.1rem', fontWeight: 600, flexShrink: 0,
+  label: { display: 'block', fontSize: 12, fontWeight: 600, color: 'var(--tx2)', marginBottom: 8 },
+  muted: { fontSize: 13, color: 'var(--tx2)', lineHeight: 1.5 },
+  typeGrid: { display: 'grid', gridTemplateColumns: 'repeat(3, minmax(0, 1fr))', gap: 8 },
+  typeCard: {
+    minHeight: 92, borderRadius: 14, cursor: 'pointer', fontFamily: 'inherit',
+    display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 4, textAlign: 'left',
   },
-  form: {
-    display: 'flex', flexDirection: 'column',
-    flex: 1, minHeight: 0,
+  amountWrap: {
+    display: 'flex', alignItems: 'center', gap: 8,
+    background: 'var(--s2)', borderRadius: 14, padding: '0 16px', minHeight: 64,
   },
-  scrollBody: {
-    flex: 1, overflowY: 'auto',
-    padding: '0 1.5rem 0.5rem',
-    display: 'flex', flexDirection: 'column', gap: '0.5rem',
+  amountInput: {
+    flex: 1, minWidth: 0, background: 'none', border: 'none', outline: 'none',
+    fontSize: 30, fontWeight: 700, color: 'var(--tx)', padding: '10px 0',
   },
-  label: { color: 'var(--tx2)', fontSize: '0.8rem' },
+  chips: { display: 'flex', flexWrap: 'wrap', gap: 8 },
+  chip: {
+    minHeight: 44, padding: '0 16px', borderRadius: 22,
+    border: '1px solid', fontSize: 14, fontWeight: 500, fontFamily: 'inherit',
+    cursor: 'pointer', transition: 'background .12s, color .12s',
+  },
+  fixedNotice: {
+    fontSize: 13, lineHeight: 1.5, color: 'var(--tx)',
+    background: 'var(--amd)', border: '1px solid color-mix(in srgb, var(--am) 28%, transparent)',
+    borderRadius: 14, padding: '12px 14px',
+  },
+  twoCols: { display: 'grid', gridTemplateColumns: 'repeat(2, minmax(0, 1fr))', gap: 10 },
   input: {
-    background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.10)', borderRadius: 8,
-    color: 'var(--tx)', padding: '0.6rem 0.75rem', fontSize: '0.95rem',
-    outline: 'none', fontFamily: 'inherit', width: '100%',
+    width: '100%', minHeight: 48, padding: '0 14px',
+    background: 'var(--s2)', border: '1px solid var(--bd2)', borderRadius: 14,
+    color: 'var(--tx)', fontSize: 15, fontFamily: 'inherit', outline: 'none',
   },
-  error: { color: 'var(--re)', fontSize: '0.82rem', margin: '0.25rem 0 0' },
+  addObs: {
+    alignSelf: 'flex-start', minHeight: 44, padding: '0 4px',
+    background: 'none', border: 'none', color: 'var(--gr)',
+    fontSize: 14, fontWeight: 600, fontFamily: 'inherit', cursor: 'pointer',
+  },
+  error: { color: 'var(--re)', fontSize: 13 },
   footer: {
-    display: 'flex', gap: '0.75rem',
-    padding: '0.75rem 1.5rem 1.25rem',
-    borderTop: '1px solid var(--bd)',
-    flexShrink: 0,
+    flexShrink: 0, borderTop: '1px solid var(--bd)',
+    padding: '12px 20px calc(16px + env(safe-area-inset-bottom))',
   },
   btnPrimary: {
-    flex: 1, padding: '0.65rem', background: 'var(--gr)', color: '#000',
-    border: 'none', borderRadius: 8, fontSize: '0.95rem', fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit',
-  },
-  btnSecondary: {
-    flex: 1, padding: '0.65rem', background: 'var(--s2)', color: 'var(--tx)',
-    border: '1px solid var(--bd2)', borderRadius: 8, fontSize: '0.95rem', cursor: 'pointer', fontFamily: 'inherit',
+    width: '100%', height: 56, borderRadius: 14, border: 'none',
+    background: 'var(--gr)', color: 'var(--on-accent)',
+    fontSize: 16, fontWeight: 700, fontFamily: 'inherit', cursor: 'pointer',
   },
 }

@@ -15,7 +15,7 @@ export function computeMetrics(txns) {
         })
         .forEach(t => {
         const key   = t.category?.name ?? 'Otros'
-        const color = t.category?.color ?? '#555'
+        const color = t.category?.color ?? 'var(--tx3)'
         if (!byCatMap[key]) byCatMap[key] = { name: key, color, amount: 0 }
         byCatMap[key].amount += Math.abs(Number(t.amount))
         })

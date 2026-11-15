@@ -10,8 +10,8 @@ const TYPE_ORDER  = ['income', 'fixed', 'variable']
 const TYPE_LABELS = { income: 'Ingresos', fixed: 'Gastos fijos', variable: 'Variables' }
 const TYPE_BADGE  = {
   income:   { label: 'ingreso',  color: 'var(--gr)', bg: 'var(--grd)' },
-  fixed:    { label: 'fijo',     color: 'var(--pu)', bg: 'var(--pud)' },
-  variable: { label: 'variable', color: 'var(--am)', bg: 'rgba(245,158,11,.1)' },
+  fixed:    { label: 'fijo',     color: 'var(--am)', bg: 'var(--amd)' },
+  variable: { label: 'variable', color: 'var(--pu)', bg: 'var(--pud)' },
 }
 
 const ChevRight = () => (
@@ -198,7 +198,7 @@ export default function Categories() {
 
                       {/* Subcategory list */}
                       {isOpen && (
-                        <div style={{ borderTop: '1px solid var(--bd)', background: 'rgba(0,0,0,0.2)' }}>
+                        <div style={{ borderTop: '1px solid var(--bd)', background: 'var(--s2)' }}>
                           {subs.length === 0 ? (
                             <p style={{ color: 'var(--tx3)', fontSize: 12, padding: '10px 14px 10px 34px' }}>
                               Sin subcategorías
@@ -299,7 +299,6 @@ const s = {
   },
   fab: {
     position: 'fixed',
-    bottom: 76,
     width: 48,
     height: 48,
     borderRadius: '50%',
@@ -309,8 +308,8 @@ const s = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    color: '#000',
-    boxShadow: '0 4px 20px rgba(16,185,129,0.35)',
+    color: 'var(--on-accent)',
+    boxShadow: 'var(--shadow)',
     zIndex: 90,
   },
 }

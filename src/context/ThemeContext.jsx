@@ -2,68 +2,92 @@ import { createContext, useContext, useEffect, useState } from 'react'
 import { useAuth } from './AuthContext'
 import { supabase } from '../lib/supabaseClient'
 
-const THEMES = {
-  aurora: {
-    blob1: 'radial-gradient(circle,rgba(16,185,129,0.42),transparent 66%)',
-    blob2: 'radial-gradient(circle,rgba(34,211,238,0.34),transparent 66%)',
-    blob3: 'radial-gradient(circle,rgba(45,212,191,0.20),transparent 70%)',
-    bg: '#05100d',
-    accent: '#2ee6a8',
-  },
-  obsidian: {
-    blob1: 'radial-gradient(circle,rgba(45,212,191,0.20),transparent 64%)',
-    blob2: 'radial-gradient(circle,rgba(99,102,241,0.16),transparent 66%)',
-    blob3: 'radial-gradient(circle,rgba(45,212,191,0.10),transparent 70%)',
-    bg: '#0a0b0e',
-    accent: '#22d3ee',
-  },
-  nebula: {
-    blob1: 'radial-gradient(circle,rgba(168,85,247,0.36),transparent 66%)',
-    blob2: 'radial-gradient(circle,rgba(59,130,246,0.34),transparent 66%)',
-    blob3: 'radial-gradient(circle,rgba(45,212,191,0.18),transparent 70%)',
-    bg: '#0a0816',
-    accent: '#a855f7',
-  },
+// Los colores viven en src/index.css ([data-theme="..."]); acá solo se elige cuál aplicar.
+// eslint-disable-next-line react-refresh/only-export-components
+export const THEMES = [
+  { id: 'bosque',    label: 'Bosque' },
+  { id: 'grafito',   label: 'Grafito' },
+  { id: 'tinta',     label: 'Tinta' },
+  { id: 'porcelana', label: 'Porcelana' },
+]
+
+const DEFAULT_THEME = 'bosque'
+const THEME_IDS     = THEMES.map(t => t.id)
+const LEGACY_THEMES = { aurora: 'bosque', obsidian: 'grafito', nebula: 'tinta' }
+const STORAGE_KEY   = 'mia-theme'
+
+function normalizeTheme(value) {
+  if (THEME_IDS.includes(value)) return value
+  return LEGACY_THEMES[value] ?? DEFAULT_THEME
+}
+
+// Copia local solo para evitar el flash del tema default antes de leer Supabase
+function readLocalTheme() {
+  try { return normalizeTheme(localStorage.getItem(STORAGE_KEY)) } catch { return DEFAULT_THEME }
+}
+function writeLocalTheme(theme) {
+  try { localStorage.setItem(STORAGE_KEY, theme) } catch { /* sin storage: no pasa nada */ }
 }
 
 const ThemeContext = createContext(null)
 
 export function ThemeProvider({ children }) {
   const { user } = useAuth()
-  const [theme, setThemeState] = useState('aurora')
-  const [loadingTheme, setLoadingTheme] = useState(true)
+  const [theme, setThemeState] = useState(readLocalTheme)
+  // id del usuario cuyas preferencias ya se leyeron (loading = todavía no)
+  const [loadedFor, setLoadedFor] = useState(null)
+  const loadingTheme = user ? loadedFor !== user.id : false
 
   useEffect(() => {
-    if (!user) { setLoadingTheme(false); return }
+    document.documentElement.dataset.theme = theme
+    writeLocalTheme(theme)
+  }, [theme])
+
+  useEffect(() => {
+    if (!user) return
+    let cancelled = false
     supabase
       .from('user_preferences')
       .select('theme')
       .eq('user_id', user.id)
       .maybeSingle()
       .then(({ data }) => {
-        if (data?.theme && THEMES[data.theme]) {
-          setThemeState(data.theme)
+        if (cancelled) return
+        if (data?.theme) {
+          const next = normalizeTheme(data.theme)
+          setThemeState(next)
+          // Migrar valores viejos (aurora/obsidian/nebula/desconocido) en la DB
+          if (next !== data.theme) {
+            supabase
+              .from('user_preferences')
+              .upsert({ user_id: user.id, theme: next }, { onConflict: 'user_id' })
+              .then(({ error }) => { if (error) console.error('theme migration', error) })
+          }
         }
-        setLoadingTheme(false)
+        setLoadedFor(user.id)
       })
+    return () => { cancelled = true }
   }, [user])
 
   async function setTheme(newTheme) {
-    setThemeState(newTheme)
+    const next = normalizeTheme(newTheme)
+    setThemeState(next)
     if (user) {
-      await supabase
+      const { error } = await supabase
         .from('user_preferences')
-        .upsert({ user_id: user.id, theme: newTheme }, { onConflict: 'user_id' })
+        .upsert({ user_id: user.id, theme: next }, { onConflict: 'user_id' })
+      if (error) console.error('save theme', error)
     }
   }
 
   return (
-    <ThemeContext.Provider value={{ theme, themeConfig: THEMES[theme], setTheme, loadingTheme }}>
+    <ThemeContext.Provider value={{ theme, setTheme, loadingTheme }}>
       {children}
     </ThemeContext.Provider>
   )
 }
 
+// eslint-disable-next-line react-refresh/only-export-components
 export function useTheme() {
   const ctx = useContext(ThemeContext)
   if (!ctx) throw new Error('useTheme must be used inside ThemeProvider')

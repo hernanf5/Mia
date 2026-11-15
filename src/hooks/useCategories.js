@@ -9,16 +9,16 @@ export async function fetchCategories() {
   return { data, error }
 }
 
-export function useCategories() {
+export async function fetchSubcategories(categoryId) {
+  const { data, error } = await supabase
+    .from('subcategories')
+    .select('*')
+    .eq('category_id', categoryId)
+    .order('name')
+  return { data, error }
+}
 
-  async function fetchSubcategories(categoryId) {
-    const { data, error } = await supabase
-      .from('subcategories')
-      .select('*')
-      .eq('category_id', categoryId)
-      .order('name')
-    return { data, error }
-  }
+export function useCategories() {
 
   async function createCategory(data) {
     const { data: result, error } = await supabase

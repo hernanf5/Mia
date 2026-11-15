@@ -1,22 +1,102 @@
-:root {
-  --bg:  #05100d;
-  --s1:  rgba(255,255,255,0.045);
-  --s2:  rgba(255,255,255,0.055);
-  --s3:  rgba(255,255,255,0.06);
-  --bd:  rgba(255,255,255,0.08);
-  --bd2: rgba(255,255,255,0.10);
-  --tx:  #f3f6f5;
-  --tx2: rgba(243,246,245,0.72);
-  --tx3: rgba(243,246,245,0.42);
-  --gr:  #2ee6a8;
-  --grb: rgba(46,230,168,0.32);
-  --grd: rgba(46,230,168,0.12);
-  --re:  #f87171;
-  --red: rgba(248,113,113,0.08);
-  --am:  #f5a524;
-  --pu:  #a855f7;
-  --pud: rgba(168,85,247,0.12);
-  --cyan: #22d3ee;
+/* ── Temas (docs/rediseno-v2.md §2) ──
+   Se aplican con data-theme en <html>. bosque es el default.
+   Los selectores [data-theme] también funcionan en cualquier elemento
+   (los swatches del ProfileModal muestran cada tema así). */
+
+:root,
+[data-theme="bosque"] {
+  color-scheme: dark;
+  --bg:  #0A100E;
+  --s1:  #111916;
+  --s2:  #17211D;
+  --s3:  #1D2924;
+  --bd:  #1E2925;
+  --bd2: #2A3E35;
+  --tx:  #ECEFEC;
+  --tx2: #97A39D;
+  --tx3: #66726C;
+  --gr:  #7FC8A4;
+  --on-accent: #08110D;
+  --am:  #C8A46A;
+  --pu:  #8F9BCB;
+  --re:  #E0A090;
+  --nav-bg: rgba(18,26,23,.94);
+  --shadow: 0 12px 32px rgba(0,0,0,.45);
+  --overlay: rgba(0,0,0,.6);
+}
+
+[data-theme="grafito"] {
+  color-scheme: dark;
+  --bg:  #0B0B0C;
+  --s1:  #141416;
+  --s2:  #1B1B1E;
+  --s3:  #222226;
+  --bd:  #232326;
+  --bd2: #2E2E33;
+  --tx:  #EDEDEE;
+  --tx2: #9C9CA1;
+  --tx3: #6C6C72;
+  --gr:  #9FD8BE;
+  --on-accent: #0B0B0C;
+  --am:  #D8B07A;
+  --pu:  #A49BD6;
+  --re:  #E39A8A;
+  --nav-bg: rgba(20,20,22,.94);
+  --shadow: 0 12px 32px rgba(0,0,0,.45);
+  --overlay: rgba(0,0,0,.6);
+}
+
+[data-theme="tinta"] {
+  color-scheme: dark;
+  --bg:  #0A0D13;
+  --s1:  #11151E;
+  --s2:  #171C27;
+  --s3:  #1E2430;
+  --bd:  #1E2430;
+  --bd2: #2A3140;
+  --tx:  #EEF0F4;
+  --tx2: #9AA1AD;
+  --tx3: #687080;
+  --gr:  #D9BC85;
+  --on-accent: #0A0D13;
+  --am:  #8FA9CF;
+  --pu:  #C99A9A;
+  --re:  #E8836F;
+  --nav-bg: rgba(17,21,30,.94);
+  --shadow: 0 12px 32px rgba(0,0,0,.45);
+  --overlay: rgba(0,0,0,.6);
+}
+
+[data-theme="porcelana"] {
+  color-scheme: light;
+  --bg:  #F5F4F0;
+  --s1:  #FFFFFF;
+  --s2:  #FBFAF7;
+  --s3:  #ECE9E2;
+  --bd:  #E4E1DA;
+  --bd2: #D6D2C9;
+  --tx:  #17191C;
+  --tx2: #5F646B;
+  --tx3: #8A8F95;
+  --gr:  #2F6B55;
+  --on-accent: #FFFFFF;
+  --am:  #B07A2A;
+  --pu:  #6E62B6;
+  --re:  #B4492F;
+  --nav-bg: rgba(255,255,255,.96);
+  --shadow: 0 12px 32px rgba(23,25,28,.12);
+  --overlay: rgba(23,25,28,.35);
+}
+
+/* Derivados: se recalculan con los valores del tema que aplique */
+:root,
+[data-theme] {
+  --surface: var(--s1);
+  --grd: color-mix(in srgb, var(--gr) 13%, transparent);
+  --grb: color-mix(in srgb, var(--gr) 28%, transparent);
+  --red: color-mix(in srgb, var(--re) 13%, transparent);
+  --amd: color-mix(in srgb, var(--am) 13%, transparent);
+  --pud: color-mix(in srgb, var(--pu) 13%, transparent);
 }
 
 *, *::before, *::after {
@@ -35,7 +115,7 @@
 
 html, body {
   height: 100%;
-  background: #05100d;
+  background: var(--bg);
   font-family: 'Plus Jakarta Sans', system-ui, sans-serif;
   color: var(--tx);
   -webkit-font-smoothing: antialiased;
@@ -60,6 +140,7 @@ html, body {
 
 .fab-r {
   right: 18px;
+  bottom: 100px; /* por encima de la nav flotante */
 }
 @media (min-width: 432px) {
   .fab-r { right: calc((100vw - 430px) / 2 + 18px); }
@@ -70,18 +151,16 @@ html, body {
   overflow-y: auto;
   overflow-x: hidden;
   overscroll-behavior: contain;
-  padding-bottom: 72px;
+  padding-bottom: 112px; /* nav flotante: 68 + 16 de margen + aire */
   scrollbar-width: none;
 }
 .screen::-webkit-scrollbar { display: none; }
 
+/* Un solo estilo de card (spec §1) */
 .card {
-  background: rgba(255,255,255,0.055);
-  backdrop-filter: blur(28px) saturate(150%);
-  -webkit-backdrop-filter: blur(28px) saturate(150%);
-  border: 1px solid rgba(255,255,255,0.11);
-  border-radius: 26px;
-  box-shadow: 0 16px 50px rgba(0,0,0,0.4), inset 0 1px 0 rgba(255,255,255,0.13);
+  background: var(--surface);
+  border: 1px solid var(--bd);
+  border-radius: 20px;
 }
 
 .slbl {
@@ -89,7 +168,7 @@ html, body {
   font-weight: 600;
   letter-spacing: 1.5px;
   text-transform: uppercase;
-  color: rgba(243,246,245,0.45);
+  color: var(--tx2);
 }
 
 .prog { height: 5px; background: var(--s3); border-radius: 3px; overflow: hidden; }
@@ -121,11 +200,9 @@ html, body {
   align-items: center;
   gap: 11px;
   padding: 16px 22px;
-  background: rgba(255,255,255,0.05);
-  backdrop-filter: blur(22px) saturate(140%);
-  -webkit-backdrop-filter: blur(22px) saturate(140%);
-  border: 1px solid rgba(255,255,255,0.09);
-  border-radius: 18px;
+  background: var(--surface);
+  border: 1px solid var(--bd);
+  border-radius: 20px;
   margin-bottom: 8px;
 }
 
@@ -189,6 +266,85 @@ html, body {
 
 .mono { font-family: 'JetBrains Mono', monospace; letter-spacing: -.02em; }
 
+/* ── Bottom sheet / modal (spec §6) ── */
+.sheet-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 300;
+  background: var(--overlay);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  animation: sheet-fade .18s ease-out;
+}
+.sheet {
+  width: 100%;
+  max-width: 430px;            /* mismo ancho que el shell mobile */
+  max-height: 92dvh;
+  display: flex;
+  flex-direction: column;
+  background: var(--surface);
+  border: 1px solid var(--bd);
+  border-bottom: none;
+  border-radius: 28px 28px 0 0;
+  box-shadow: var(--shadow);
+  animation: sheet-up .24s cubic-bezier(.2,.8,.2,1);
+}
+.sheet:focus { outline: none; }
+.sheet-handle {
+  width: 40px;
+  height: 5px;
+  border-radius: 3px;
+  background: var(--bd2);
+  margin: 10px auto 2px;
+  flex-shrink: 0;
+}
+@keyframes sheet-up   { from { transform: translateY(100%); } to { transform: translateY(0); } }
+@keyframes sheet-fade { from { opacity: 0; } to { opacity: 1; } }
+
+@media (min-width: 768px) {
+  .sheet-overlay { align-items: center; padding: 16px; }
+  .sheet {
+    max-width: 480px;
+    max-height: 88vh;
+    border-bottom: 1px solid var(--bd);
+    border-radius: 28px;
+    animation: sheet-fade .18s ease-out;
+  }
+  .sheet-handle { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .sheet-overlay, .sheet { animation: none; }
+}
+
+/* ── Skeleton (spec §5) ── */
+.skel {
+  display: block;
+  background: linear-gradient(90deg, var(--s2) 0%, var(--s3) 50%, var(--s2) 100%);
+  background-size: 780px 100%;
+  animation: skel-shimmer 1.4s linear infinite;
+}
+@keyframes skel-shimmer {
+  0%   { background-position: -390px 0; }
+  100% { background-position: 390px 0; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .skel { animation: none; }
+}
+
+/* Solo para lectores de pantalla */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
 @keyframes flash { 0%,100%{opacity:1} 40%{opacity:.3} }
 .flash { animation: flash .3s ease; }
 
@@ -214,19 +370,17 @@ html, body {
 .animate-splash-fade-in  { animation: splash-fade-in  0.6s ease-out   forwards; }
 .animate-float-up        { animation: float-up        0.5s ease-out   forwards; }
 
-/* ── Sidebar (hidden on mobile) ── */
+/* ── Sidebar desktop (hidden on mobile) ── */
 .sidebar {
   display: none;
   width: 240px;
   flex-shrink: 0;
-  background: rgba(255,255,255,0.045);
-  backdrop-filter: blur(30px) saturate(150%);
-  -webkit-backdrop-filter: blur(30px) saturate(150%);
-  border-right: 1px solid rgba(255,255,255,0.08);
+  background: var(--surface);
+  border-right: 1px solid var(--bd);
   flex-direction: column;
   height: 100%;
   overflow-y: auto;
-  padding: 24px 0;
+  padding: 24px 0 16px;
   scrollbar-width: none;
   position: relative;
   z-index: 1;
@@ -236,45 +390,117 @@ html, body {
 .sidebar-nav-item {
   display: flex;
   align-items: center;
-  gap: 11px;
-  padding: 11px 20px;
-  cursor: pointer;
+  gap: 12px;
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 14px;
   font-size: 13px;
   font-weight: 500;
-  color: var(--tx3);
+  color: var(--tx2);
+  text-decoration: none;
   transition: color .15s, background .15s;
+}
+.sidebar-nav-item:hover { color: var(--tx); background: var(--s2); }
+.sidebar-nav-item.active { color: var(--gr); background: var(--grd); }
+
+.sidebar-add {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
   border: none;
+  border-radius: 14px;
+  background: var(--gr);
+  color: var(--on-accent);
+  font-family: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.sidebar-profile {
+  width: 100%;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 8px;
+  border: none;
+  border-radius: 14px;
   background: none;
   font-family: inherit;
-  width: 100%;
   text-align: left;
-  position: relative;
+  cursor: pointer;
 }
-.sidebar-nav-item:hover { color: var(--tx2); background: rgba(255,255,255,.03); }
-.sidebar-nav-item.active { color: #2ee6a8; background: rgba(46,230,168,0.10); }
-.sidebar-nav-item.active::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 50%;
-  transform: translateY(-50%);
-  width: 3px;
-  height: 20px;
-  border-radius: 0 3px 3px 0;
-  background: #2ee6a8;
-  box-shadow: 0 0 12px #2ee6a8;
-}
-.sidebar-nav-item > div svg { width: 18px; height: 18px; }
+.sidebar-profile:hover { background: var(--s2); }
 
-/* ── Mobile nav ── */
+/* ── Navbar flotante mobile (spec §3) ── */
 .mobile-nav {
-  background: rgba(8,18,15,0.7);
-  backdrop-filter: blur(26px) saturate(150%);
-  -webkit-backdrop-filter: blur(26px) saturate(150%);
-  border-top: 1px solid rgba(255,255,255,0.08);
-  position: relative;
-  z-index: 1;
+  position: absolute;
+  left: 16px;
+  right: 16px;
+  bottom: 16px;
+  height: 68px;
+  z-index: 100;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr)); /* el + queda siempre centrado */
+  align-items: center;
+  padding: 0 4px;
+  border-radius: 24px;
+  /* La nav es lo único que puede usar blur (spec §1) */
+  background: var(--nav-bg);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border: 1px solid var(--bd);
+  box-shadow: var(--shadow);
 }
+
+.nav-item,
+.nav-cell {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+}
+.nav-item {
+  color: var(--tx2);
+  text-decoration: none;
+  border-radius: 14px;
+  transition: color .15s;
+}
+.nav-item-ind {
+  width: 52px;
+  height: 44px;
+  border-radius: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background .15s;
+}
+.nav-item[aria-current="page"] { color: var(--gr); }
+.nav-item[aria-current="page"] .nav-item-ind { background: var(--grd); }
+.nav-item:focus-visible { outline-offset: -4px; }
+
+.nav-add {
+  width: 52px;
+  height: 52px;
+  border-radius: 50%;
+  border: none;
+  background: var(--gr);
+  color: var(--on-accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: transform .12s;
+}
+.nav-add:active { transform: scale(.94); }
+
+/* Reserva de alto para la nav en layouts que no usan .screen (p.ej. Fijos) */
+.nav-spacer { height: 100px; flex-shrink: 0; }
 
 /* ── Main content wrapper ── */
 .main-content {
@@ -312,7 +538,9 @@ html, body {
   .mobile-nav { display: none !important; }
 
   /* FAB: reset the 432px calc rule */
-  .fab-r { right: 18px; }
+  .fab-r { right: 18px; bottom: 24px; }
+
+  .nav-spacer { display: none; }
 
   /* Dashboard 2-col grid */
   .dash-layout {
@@ -324,12 +552,3 @@ html, body {
 }
 
 @keyframes spin { to { transform: rotate(360deg) } }
-
-@keyframes miaFloat {
-  0%,100% { transform: translate(0,0) scale(1); }
-  50% { transform: translate(30px,-26px) scale(1.08); }
-}
-@keyframes miaFloat2 {
-  0%,100% { transform: translate(0,0) scale(1); }
-  50% { transform: translate(-34px,24px) scale(1.06); }
-}

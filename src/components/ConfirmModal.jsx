@@ -15,14 +15,14 @@ export default function ConfirmModal({ title, message, confirmLabel = 'Eliminar'
 
 const s = {
   overlay: {
-    position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.75)',
+    position: 'fixed', inset: 0, background: 'var(--overlay)',
     display: 'flex', alignItems: 'center', justifyContent: 'center',
     zIndex: 200, padding: '1rem',
   },
   modal: {
     background: 'var(--s1)', borderRadius: 16, padding: '1.5rem',
     width: '100%', maxWidth: 340, border: '1px solid var(--bd)',
-    boxShadow: '0 8px 40px rgba(0,0,0,0.6)',
+    boxShadow: 'var(--shadow)',
   },
   title: { color: 'var(--tx)', margin: '0 0 0.5rem', fontSize: '1rem', fontWeight: 600 },
   message: { color: 'var(--tx2)', fontSize: '0.85rem', lineHeight: 1.5, margin: '0 0 1.25rem' },
@@ -33,6 +33,6 @@ const s = {
   },
   btnDanger: {
     flex: 1, padding: '0.65rem', background: 'var(--red)', color: 'var(--re)',
-    border: '1px solid rgba(244,63,94,.25)', borderRadius: 8, fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
+    border: '1px solid color-mix(in srgb, var(--re) 25%, transparent)', borderRadius: 8, fontSize: '0.9rem', cursor: 'pointer', fontFamily: 'inherit', fontWeight: 600,
   },
 }

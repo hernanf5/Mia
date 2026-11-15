@@ -22,9 +22,9 @@ export default function SplashScreen({ onFinish }) {
           style={{ position: 'absolute' }}
         >
           <svg width="96" height="96" viewBox="0 0 64 64" xmlns="http://www.w3.org/2000/svg">
-            <rect width="64" height="64" rx="16" fill="#0B0B0F" />
-            <path d="M20 44 L20 18 L32 34 L44 18 L44 44" fill="none" stroke="#EDEDED" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
-            <path d="M32 16 c-1.5 -2 -5 -2 -5 1.5 c0 3.5 5 6.5 5 6.5 c0 0 5 -3 5 -6.5 c0 -3.5 -3.5 -3.5 -5 -1.5 Z" fill="#A78BFA" />
+            <rect width="64" height="64" rx="16" style={{ fill: 'var(--s1)' }} />
+            <path d="M20 44 L20 18 L32 34 L44 18 L44 44" fill="none" style={{ stroke: 'var(--tx)' }} strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+            <path d="M32 16 c-1.5 -2 -5 -2 -5 1.5 c0 3.5 5 6.5 5 6.5 c0 0 5 -3 5 -6.5 c0 -3.5 -3.5 -3.5 -5 -1.5 Z" style={{ fill: 'var(--gr)' }} />
           </svg>
         </div>
       )}
