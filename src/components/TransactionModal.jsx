@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useAuth } from '../context/AuthContext'
 import { fetchSubcategories } from '../hooks/useCategories'
 import { useData } from '../context/DataContext'
@@ -115,7 +116,9 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
     onSave?.(saved)
   }
 
-  return (
+  // Portal a <body>: si se renderiza dentro de .main-content (stacking context propio)
+  // el z-index del overlay no alcanza para quedar sobre la nav flotante
+  return createPortal(
     <div className="sheet-overlay" onClick={onClose}>
       <div
         ref={sheetRef}
@@ -280,7 +283,8 @@ export default function TransactionModal({ transaction = null, onSave, onClose }
           </div>
         </form>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }
 
